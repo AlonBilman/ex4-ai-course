@@ -1,0 +1,22 @@
+Given the following natural language query: "{query}"
+
+Please analyze the following survey data and return matches based on semantic similarity:
+
+Survey Data:
+{surveyData}
+
+Return a JSON object with the following structure:
+{
+  "matches": [
+    {
+      "id": "survey_id",
+      "score": similarity_score (0-1),
+      "title": "survey_title"
+    }
+  ]
+}
+
+Consider the following aspects when matching:
+1. Semantic similarity between query and survey area/question
+2. Relevance of survey guidelines to the query
+3. Current status of the survey (active/closed/expired) 

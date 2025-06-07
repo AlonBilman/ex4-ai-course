@@ -1,0 +1,11 @@
+Summarize the following survey responses: {responses}
+
+Instructions for summarization: {summaryInstructions}
+
+Consider the following aspects:
+1. Common themes and patterns
+2. Key insights and findings
+3. Response distribution and trends
+4. Any notable outliers or unique perspectives
+
+Return a comprehensive summary that captures the main points and insights from the responses. 

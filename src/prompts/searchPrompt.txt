@@ -1,0 +1,8 @@
+Search for surveys that match the following query: {query}
+
+Consider the following aspects:
+1. Survey title and description relevance
+2. Survey status (active/expired)
+3. Survey creator's domain expertise
+
+Return a list of matching surveys with reasons for each match. 
