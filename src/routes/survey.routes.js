@@ -12,28 +12,40 @@ const {
   searchSurveys,
   generateSummary,
   toggleSummaryVisibility,
+  validateResponse,
+  closeSurvey,
+  validateAllResponses,
 } = require("../controllers/survey.controller");
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
+// Public routes
+router.get("/", getSurveys);
+router.get("/search", searchSurveys);
+
+// Protected routes
 router.use(auth);
 
 // Survey CRUD operations
 router.post("/", createSurvey);
-router.get("/", getSurveys);
 router.get("/:id", getSurveyById);
 router.patch("/:id", isCreator, updateSurvey);
 router.delete("/:id", isCreator, deleteSurvey);
 
 // Response management
 router.post("/:id/responses", submitResponse);
-router.put("/:id/responses", updateResponse);
-router.delete("/:id/responses", removeResponse);
+router.put("/:id/responses/:responseId", updateResponse);
+router.delete("/:id/responses/:responseId", removeResponse);
 
 // AI operations
-router.post("/search", searchSurveys);
-router.post("/:id/summarize", isCreator, generateSummary);
+router.post("/:id/summary", isCreator, generateSummary);
 router.patch("/:id/summary/visibility", isCreator, toggleSummaryVisibility);
+
+// Survey creator only routes
+router.get("/:id/responses/:responseId/validate", validateResponse);
+router.get("/:id/responses/validate", validateAllResponses);
+
+// Additional route for closing a survey
+router.post("/:id/close", closeSurvey);
 
 module.exports = router;

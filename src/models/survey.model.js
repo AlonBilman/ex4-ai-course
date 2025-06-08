@@ -63,34 +63,35 @@ const summarySchema = new mongoose.Schema({
 });
 
 const surveySchema = new mongoose.Schema({
-  title: {
+  area: {
     type: String,
-    required: [true, 'Survey title is required'],
-    trim: true,
-    minlength: [3, 'Title must be at least 3 characters long'],
-    maxlength: [200, 'Title cannot exceed 200 characters']
+    required: [true, 'Survey area is required'],
+    trim: true
   },
-  description: {
+  question: {
     type: String,
-    required: [true, 'Survey description is required'],
-    trim: true,
-    minlength: [10, 'Description must be at least 10 characters long'],
-    maxlength: [1000, 'Description cannot exceed 1000 characters']
+    required: [true, 'Survey question is required'],
+    trim: true
   },
   creator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'Survey creator is required']
   },
-  questions: {
-    type: [questionSchema],
-    required: [true, 'Survey must have at least one question'],
-    validate: {
-      validator: function(questions) {
-        return questions && questions.length > 0;
-      },
-      message: 'Survey must have at least one question'
-    }
+  permittedDomains: [{
+    type: String,
+    required: [true, 'At least one permitted domain is required'],
+    trim: true
+  }],
+  permittedResponses: {
+    type: String,
+    required: [true, 'Response guidelines are required'],
+    trim: true
+  },
+  summaryInstructions: {
+    type: String,
+    required: [true, 'Summary instructions are required'],
+    trim: true
   },
   expiryDate: {
     type: Date,
@@ -101,11 +102,6 @@ const surveySchema = new mongoose.Schema({
       },
       message: 'Expiry date must be in the future'
     }
-  },
-  maxResponses: {
-    type: Number,
-    min: [1, 'Maximum responses must be at least 1'],
-    default: 1000
   },
   isActive: {
     type: Boolean,
@@ -134,8 +130,7 @@ surveySchema.methods.canAcceptResponses = async function() {
   if (this.isExpired || !this.isActive) {
     return false;
   }
-  const responseCount = await mongoose.model('Response').countDocuments({ survey: this._id });
-  return responseCount < this.maxResponses;
+  return true;
 };
 
 // Method to check if user has already responded

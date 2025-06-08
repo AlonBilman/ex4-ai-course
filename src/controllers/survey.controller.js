@@ -308,58 +308,52 @@ const submitResponse = async (req, res) => {
   }
 };
 
-// Search surveys
+// Search surveys using natural language
 const searchSurveys = async (req, res) => {
   try {
-    const { error } = surveySchema.search.validate(req.body);
-    if (error) {
+    const { query } = req.query;
+    if (!query) {
       return res.status(400).json({
         error: {
-          code: "VALIDATION_ERROR",
-          message: error.details[0].message,
-        },
+          code: "MISSING_QUERY",
+          message: "Search query is required"
+        }
       });
     }
 
-    const results = await llmService.searchSurveys(req.body.query);
-    const surveys = await Survey.find({
-      _id: { $in: results.matches.map((m) => m.id) },
-    }).populate("creator", "username");
+    const surveys = await Survey.find()
+      .select('title description area permittedDomains')
+      .lean();
+
+    const matches = await llmService.searchSurveys(query, surveys);
 
     res.json({
-      matches: surveys.map((survey) => ({
-        id: survey._id,
-        area: survey.area,
-        question: survey.question,
-        creator: survey.creator.username,
-        isActive: survey.isActive(),
-      })),
+      message: "Search completed successfully",
+      matches
     });
   } catch (error) {
-    logger.error("Survey search error:", error);
+    logger.error("Error searching surveys:", error);
     res.status(500).json({
       error: {
         code: "SEARCH_ERROR",
-        message: "Error searching surveys",
-      },
+        message: "Error searching surveys"
+      }
     });
   }
 };
 
-// Generate summary
-const generateSummary = async (req, res) => {
+// Validate a response against survey guidelines
+const validateResponse = async (req, res) => {
   try {
-    const survey = await Survey.findById(req.params.id).populate(
-      "responses.user",
-      "username",
-    );
-
+    const { surveyId, responseId } = req.params;
+    const survey = await Survey.findById(surveyId);
+    
     if (!survey) {
       return res.status(404).json({
         error: {
           code: "SURVEY_NOT_FOUND",
-          message: "Survey not found",
-        },
+          message: "Survey not found"
+        }
       });
     }
 
@@ -367,47 +361,156 @@ const generateSummary = async (req, res) => {
       return res.status(403).json({
         error: {
           code: "NOT_CREATOR",
-          message: "Only the survey creator can generate summary",
-        },
+          message: "Only the survey creator can validate responses"
+        }
       });
     }
 
-    if (!survey.isClosed && !survey.isExpired()) {
+    const response = survey.responses.id(responseId);
+    if (!response) {
+      return res.status(404).json({
+        error: {
+          code: "RESPONSE_NOT_FOUND",
+          message: "Response not found"
+        }
+      });
+    }
+
+    const validationResult = await llmService.validateResponse(
+      survey.permittedResponses,
+      response.content
+    );
+
+    res.json({
+      message: "Response validation completed",
+      validationResult
+    });
+  } catch (error) {
+    logger.error("Error validating response:", error);
+    res.status(500).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Error validating response"
+      }
+    });
+  }
+};
+
+// Validate all responses in a survey
+const validateAllResponses = async (req, res) => {
+  try {
+    const survey = await Survey.findById(req.params.id)
+      .populate('responses.user', 'username');
+    
+    if (!survey) {
+      return res.status(404).json({
+        error: {
+          code: "SURVEY_NOT_FOUND",
+          message: "Survey not found"
+        }
+      });
+    }
+
+    if (survey.creator.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        error: {
+          code: "NOT_CREATOR",
+          message: "Only the survey creator can validate responses"
+        }
+      });
+    }
+
+    const validationResults = [];
+    for (const response of survey.responses) {
+      const validationResult = await llmService.validateResponse(
+        survey.permittedResponses,
+        response.content
+      );
+      
+      if (!validationResult.isValid) {
+        validationResults.push({
+          surveyId: survey._id,
+          responseId: response._id,
+          userId: response.user._id,
+          username: response.user.username,
+          reason: validationResult.reason
+        });
+      }
+    }
+
+    res.json({
+      message: "Response validation completed",
+      validationResults
+    });
+  } catch (error) {
+    logger.error("Error validating responses:", error);
+    res.status(500).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Error validating responses"
+      }
+    });
+  }
+};
+
+// Generate survey summary
+const generateSummary = async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+    const survey = await Survey.findById(surveyId)
+      .populate('responses.user', 'username');
+
+    if (!survey) {
+      return res.status(404).json({
+        error: {
+          code: "SURVEY_NOT_FOUND",
+          message: "Survey not found"
+        }
+      });
+    }
+
+    if (survey.creator.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        error: {
+          code: "NOT_CREATOR",
+          message: "Only the survey creator can generate summaries"
+        }
+      });
+    }
+
+    if (survey.responses.length === 0) {
       return res.status(400).json({
         error: {
-          code: "SURVEY_ACTIVE",
-          message: "Cannot generate summary for active survey",
-        },
+          code: "NO_RESPONSES",
+          message: "Cannot generate summary for survey with no responses"
+        }
       });
     }
 
     const summary = await llmService.generateSummary(
       survey.responses,
-      survey.guidelines.summaryInstructions,
+      survey.summaryInstructions
     );
 
     survey.summary = {
-      content: summary.summary,
+      content: summary,
       isVisible: false,
-      generatedAt: new Date(),
+      generatedAt: new Date()
     };
 
     await survey.save();
-    logger.info(
-      `Summary generated for survey: ${survey.area} by ${req.user.username}`,
-    );
 
     res.json({
       message: "Summary generated successfully",
-      summary: survey.summary,
+      summary: survey.summary
     });
   } catch (error) {
-    logger.error("Summary generation error:", error);
+    logger.error("Error generating summary:", error);
     res.status(500).json({
       error: {
         code: "SUMMARY_ERROR",
-        message: "Error generating summary",
-      },
+        message: "Error generating summary"
+      }
     });
   }
 };
@@ -577,6 +680,58 @@ const removeResponse = async (req, res) => {
   }
 };
 
+// Close survey (creator only)
+const closeSurvey = async (req, res) => {
+  try {
+    const survey = await Survey.findById(req.params.id);
+    
+    if (!survey) {
+      return res.status(404).json({
+        error: {
+          code: "SURVEY_NOT_FOUND",
+          message: "Survey not found"
+        }
+      });
+    }
+
+    if (survey.creator.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        error: {
+          code: "NOT_CREATOR",
+          message: "Only the survey creator can close the survey"
+        }
+      });
+    }
+
+    if (!survey.isActive) {
+      return res.status(400).json({
+        error: {
+          code: "SURVEY_ALREADY_CLOSED",
+          message: "Survey is already closed"
+        }
+      });
+    }
+
+    survey.isActive = false;
+    await survey.save();
+
+    logger.info(`Survey closed: ${survey.area} by ${req.user.username}`);
+
+    res.json({
+      message: "Survey closed successfully",
+      survey
+    });
+  } catch (error) {
+    logger.error("Error closing survey:", error);
+    res.status(500).json({
+      error: {
+        code: "CLOSE_ERROR",
+        message: "Error closing survey"
+      }
+    });
+  }
+};
+
 module.exports = {
   createSurvey,
   getSurveys,
@@ -585,8 +740,11 @@ module.exports = {
   deleteSurvey,
   submitResponse,
   searchSurveys,
+  validateResponse,
+  validateAllResponses,
   generateSummary,
   toggleSummaryVisibility,
   updateResponse,
   removeResponse,
+  closeSurvey
 };

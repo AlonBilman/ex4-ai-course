@@ -6,7 +6,7 @@ process.env.USE_MOCK_LLM = "true";
 const request = require("supertest");
 const express = require("express");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const surveyRoutes = require("../routes/survey.routes");
 const {

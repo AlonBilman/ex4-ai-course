@@ -23,70 +23,49 @@ const userSchema = Joi.object({
     })
 });
 
-const surveySchema = Joi.object({
-  title: Joi.string().min(3).max(100).required()
-    .messages({
-      'string.min': 'Title must be at least 3 characters long',
-      'string.max': 'Title cannot exceed 100 characters',
-      'any.required': 'Title is required'
-    }),
-  description: Joi.string().min(10).max(1000).required()
-    .messages({
-      'string.min': 'Description must be at least 10 characters long',
-      'string.max': 'Description cannot exceed 1000 characters',
-      'any.required': 'Description is required'
-    }),
-  questions: Joi.array().items(
-    Joi.object({
-      text: Joi.string().required(),
-      type: Joi.string().valid('text', 'multiple_choice', 'rating').required(),
-      options: Joi.when('type', {
-        is: 'multiple_choice',
-        then: Joi.array().items(Joi.string()).min(2).required(),
-        otherwise: Joi.forbidden()
+const surveySchema = {
+  create: Joi.object({
+    area: Joi.string().required()
+      .messages({
+        'any.required': 'Survey area is required'
+      }),
+    question: Joi.string().required()
+      .messages({
+        'any.required': 'Survey question is required'
+      }),
+    permittedDomains: Joi.array().items(Joi.string()).min(1).required()
+      .messages({
+        'array.min': 'At least one permitted domain is required',
+        'any.required': 'Permitted domains are required'
+      }),
+    permittedResponses: Joi.string().required()
+      .messages({
+        'any.required': 'Response guidelines are required'
+      }),
+    summaryInstructions: Joi.string().required()
+      .messages({
+        'any.required': 'Summary instructions are required'
+      }),
+    expiryDate: Joi.date().min('now').required()
+      .messages({
+        'date.min': 'Expiry date must be in the future',
+        'any.required': 'Expiry date is required'
       })
-    })
-  ).min(1).required()
-    .messages({
-      'array.min': 'At least one question is required',
-      'any.required': 'Questions are required'
-    }),
-  expiryDate: Joi.date().min('now').required()
-    .messages({
-      'date.min': 'Expiry date must be in the future',
-      'any.required': 'Expiry date is required'
-    })
-});
+  }),
+  update: Joi.object({
+    area: Joi.string(),
+    question: Joi.string(),
+    permittedDomains: Joi.array().items(Joi.string()).min(1),
+    permittedResponses: Joi.string(),
+    summaryInstructions: Joi.string(),
+    expiryDate: Joi.date().min('now')
+  })
+};
 
 const responseSchema = Joi.object({
-  surveyId: Joi.string().required()
+  content: Joi.string().required()
     .messages({
-      'any.required': 'Survey ID is required'
-    }),
-  answers: Joi.array().items(
-    Joi.object({
-      questionId: Joi.string().required(),
-      answer: Joi.alternatives().conditional('type', {
-        switch: [
-          {
-            is: 'text',
-            then: Joi.string().min(10).max(2000).required()
-          },
-          {
-            is: 'multiple_choice',
-            then: Joi.string().required()
-          },
-          {
-            is: 'rating',
-            then: Joi.number().min(1).max(5).required()
-          }
-        ]
-      })
-    })
-  ).min(1).required()
-    .messages({
-      'array.min': 'At least one answer is required',
-      'any.required': 'Answers are required'
+      'any.required': 'Response content is required'
     })
 });
 

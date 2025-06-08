@@ -3,7 +3,6 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
-const helmet = require("helmet");
 const { logger } = require("./config/logger");
 const { apiLimiter, authLimiter, surveyCreationLimiter } = require("./config/rateLimiter");
 const authRoutes = require("./routes/auth.routes");
@@ -13,29 +12,15 @@ const swaggerSpecs = require('./config/swagger');
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
-
 // Middleware
+app.use(cors());
 app.use(express.json());
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
-  }),
-);
+app.use(morgan("dev"));
 
 // Rate limiting
 app.use("/auth", authLimiter);
 app.use("/surveys/create", surveyCreationLimiter);
 app.use("/", apiLimiter);
-
-// Logging
-app.use(
-  morgan("combined", {
-    stream: { write: (message) => logger.info(message.trim()) },
-  }),
-);
 
 // Routes
 app.use("/auth", authRoutes);

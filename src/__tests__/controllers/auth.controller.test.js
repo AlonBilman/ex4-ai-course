@@ -7,7 +7,7 @@ const {
   setupTestEnv,
 } = require("../helpers/test.helper");
 const User = require("../../models/user.model");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server");
 const express = require("express");

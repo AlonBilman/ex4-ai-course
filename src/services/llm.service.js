@@ -1,62 +1,104 @@
 const fs = require("fs").promises;
 const path = require("path");
-const logger = require("../utils/logger");
+const { logger } = require("../config/logger");
 
 class LLMService {
   constructor() {
     this.prompts = {};
-    this.initializePrompts();
+    this.initialized = false;
   }
 
-  async initializePrompts() {
+  async initialize() {
     try {
-      const promptsDir = path.join(__dirname, '..', 'prompts');
-      const files = await fs.readdir(promptsDir);
-      
-      for (const file of files) {
-        if (file.endsWith('.txt')) {
-          const promptName = path.basename(file, '.txt');
-          const content = await fs.readFile(path.join(promptsDir, file), 'utf8');
-          this.prompts[promptName] = content;
-        }
+      const promptsDir = path.join(__dirname, '../prompts');
+      const promptFiles = ['searchPrompt.txt', 'validatePrompt.txt', 'summaryPrompt.txt'];
+
+      for (const file of promptFiles) {
+        const content = await fs.readFile(path.join(promptsDir, file), 'utf8');
+        this.prompts[file.replace('.txt', '')] = content;
       }
-      
-      logger.info('LLM prompts initialized successfully');
+
+      this.initialized = true;
+      logger.info('LLM service initialized successfully');
     } catch (error) {
-      logger.error('Error initializing LLM prompts:', error);
-      throw error;
+      logger.error('Failed to initialize LLM service:', error);
+      throw new Error('Failed to initialize LLM service');
     }
   }
 
-  async search(query, surveys) {
-    if (process.env.USE_MOCK_LLM === 'true') {
-      return surveys.map((survey, idx) => ({
-        survey,
-        reason: idx === 0 ? 'Matches search query in title and description' : 'Matches search query in description'
-      }));
+  async searchSurveys(query, surveys) {
+    if (!this.initialized) await this.initialize();
+
+    try {
+      const prompt = this.prompts.searchPrompt
+        .replace('{query}', query)
+        .replace('{surveys}', JSON.stringify(surveys));
+
+      // TODO: Replace with actual LLM API call
+      const mockResponse = {
+        matches: surveys
+          .filter(survey => 
+            survey.title.toLowerCase().includes(query.toLowerCase()) ||
+            survey.description.toLowerCase().includes(query.toLowerCase())
+          )
+          .map(survey => ({
+            id: survey._id.toString(),
+            reason: `Matches query "${query}" in title or description`
+          }))
+      };
+
+      return mockResponse.matches;
+    } catch (error) {
+      logger.error('Error in searchSurveys:', error);
+      throw new Error('Failed to search surveys');
     }
-    return [];
   }
 
   async validateResponse(guidelines, response) {
-    if (process.env.USE_MOCK_LLM === 'true') {
-      return {
-        isValid: true,
-        feedback: 'Response meets all guidelines'
+    if (!this.initialized) await this.initialize();
+
+    try {
+      const prompt = this.prompts.validatePrompt
+        .replace('{guidelines}', guidelines)
+        .replace('{response}', response);
+
+      // TODO: Replace with actual LLM API call
+      const mockResponse = {
+        isValid: response.length >= 10 && response.length <= 2000,
+        reason: response.length < 10 
+          ? 'Response is too short' 
+          : response.length > 2000 
+            ? 'Response is too long' 
+            : 'Response meets guidelines'
       };
+
+      return mockResponse;
+    } catch (error) {
+      logger.error('Error in validateResponse:', error);
+      throw new Error('Failed to validate response');
     }
-    return { isValid: false, feedback: 'Not implemented' };
   }
 
-  async summarizeResponses(responses, summaryInstructions) {
-    if (process.env.USE_MOCK_LLM === 'true') {
-      return {
-        summary: 'Mock summary of responses',
-        keyInsights: ['Insight 1', 'Insight 2']
+  async generateSummary(responses, summaryInstructions) {
+    if (!this.initialized) await this.initialize();
+
+    try {
+      const prompt = this.prompts.summaryPrompt
+        .replace('{responses}', JSON.stringify(responses))
+        .replace('{summaryInstructions}', summaryInstructions);
+
+      // TODO: Replace with actual LLM API call
+      const mockResponse = {
+        summary: `Summary of ${responses.length} responses:\n` +
+          responses.map(r => `- ${r.content.substring(0, 50)}...`).join('\n')
       };
+
+      return mockResponse.summary;
+    } catch (error) {
+      logger.error('Error in generateSummary:', error);
+      throw new Error('Failed to generate summary');
     }
-    return { summary: '', keyInsights: [] };
   }
 }
 
-module.exports = { LLMService };
+module.exports = new LLMService();
