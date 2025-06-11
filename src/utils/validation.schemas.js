@@ -68,6 +68,12 @@ const surveySchema = {
       summaryInstructions: Joi.string()
     }),
     expiryDate: Joi.date().min('now')
+  }),
+  summaryVisibility: Joi.object({
+    isVisible: Joi.boolean().required()
+      .messages({
+        'any.required': 'Visibility status is required'
+      })
   })
 };
 

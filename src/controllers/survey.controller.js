@@ -257,8 +257,17 @@ const submitResponse = async (req, res) => {
       (r) => r.user.toString() === userId,
     );
 
+    if (existingResponse) {
+      return res.status(400).json({
+        error: {
+          code: "RESPONSE_ALREADY_EXISTS",
+          message: "You have already submitted a response to this survey",
+        },
+      });
+    }
+
     // Enforce maxResponses if set
-    if (!existingResponse && survey.maxResponses && survey.responses.length >= survey.maxResponses) {
+    if (survey.maxResponses && survey.responses.length >= survey.maxResponses) {
       return res.status(400).json({
         error: {
           code: "MAX_RESPONSES_REACHED",
@@ -267,23 +276,18 @@ const submitResponse = async (req, res) => {
       });
     }
 
-    if (existingResponse) {
-      existingResponse.content = req.body.content;
-      existingResponse.updatedAt = new Date();
-    } else {
-      survey.responses.push({
-        user: userId,
-        content: req.body.content,
-      });
-    }
+    survey.responses.push({
+      user: userId,
+      content: req.body.content,
+    });
 
     await survey.save();
     logger.info(
       `Response submitted to survey: ${survey.area} by ${req.user.username}`,
     );
 
-    const responseToReturn = existingResponse || survey.responses[survey.responses.length - 1];
-    res.status(201).json(responseToReturn);
+    const newResponse = survey.responses[survey.responses.length - 1];
+    res.status(201).json(newResponse);
   } catch (error) {
     logger.error("Response submission error:", error);
     res.status(500).json({
@@ -332,7 +336,7 @@ const searchSurveys = async (req, res) => {
 // Validate a response against survey guidelines
 const validateResponse = async (req, res) => {
   try {
-    const { surveyId, responseId } = req.params;
+    const { id: surveyId, responseId } = req.params;
     const survey = await Survey.findById(surveyId);
     
     if (!survey) {
@@ -364,7 +368,7 @@ const validateResponse = async (req, res) => {
     }
 
     const validationResult = await llmService.validateResponse(
-      survey.permittedResponses,
+      survey.guidelines.permittedResponses,
       response.content
     );
 
@@ -410,7 +414,7 @@ const validateAllResponses = async (req, res) => {
     const validationResults = [];
     for (const response of survey.responses) {
       const validationResult = await llmService.validateResponse(
-        survey.permittedResponses,
+        survey.guidelines.permittedResponses,
         response.content
       );
       
@@ -443,7 +447,7 @@ const validateAllResponses = async (req, res) => {
 // Generate survey summary
 const generateSummary = async (req, res) => {
   try {
-    const { surveyId } = req.params;
+    const surveyId = req.params.id;
     const survey = await Survey.findById(surveyId)
       .populate('responses.user', 'username');
 
@@ -476,7 +480,7 @@ const generateSummary = async (req, res) => {
 
     const summary = await llmService.generateSummary(
       survey.responses,
-      survey.summaryInstructions
+      survey.guidelines.summaryInstructions
     );
 
     survey.summary = {

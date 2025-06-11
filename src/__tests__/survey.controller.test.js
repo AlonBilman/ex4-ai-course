@@ -169,6 +169,28 @@ describe("Survey Controller", () => {
       expect(res.body.error.message).toContain("expired");
     });
 
+    it("should not allow duplicate responses from the same user", async () => {
+      // Submit first response
+      await request(app)
+        .post(`/surveys/${survey._id}/responses`)
+        .set("Authorization", `Bearer ${userToken}`)
+        .send({
+          content: "First response"
+        });
+
+      // Try to submit another response from the same user
+      const res = await request(app)
+        .post(`/surveys/${survey._id}/responses`)
+        .set("Authorization", `Bearer ${userToken}`)
+        .send({
+          content: "Second response"
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("RESPONSE_ALREADY_EXISTS");
+      expect(res.body.error.message).toContain("already submitted a response");
+    });
+
     it("should not allow more than maxResponses", async () => {
       survey.maxResponses = 1;
       await survey.save();

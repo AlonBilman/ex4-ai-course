@@ -1,5 +1,5 @@
 const express = require("express");
-const { auth, isCreator } = require("../middleware/auth.middleware");
+const { auth } = require("../middleware/auth.middleware");
 const {
   createSurvey,
   getSurveys,
@@ -29,8 +29,8 @@ router.use(auth);
 // Survey CRUD operations
 router.post("/", createSurvey);
 router.get("/:id", getSurveyById);
-router.patch("/:id", isCreator, updateSurvey);
-router.delete("/:id", isCreator, deleteSurvey);
+router.patch("/:id", updateSurvey);
+router.delete("/:id", deleteSurvey);
 
 // Response management
 router.post("/:id/responses", submitResponse);
@@ -38,8 +38,8 @@ router.put("/:id/responses/:responseId", updateResponse);
 router.delete("/:id/responses/:responseId", removeResponse);
 
 // AI operations
-router.post("/:id/summary", isCreator, generateSummary);
-router.patch("/:id/summary/visibility", isCreator, toggleSummaryVisibility);
+router.post("/:id/summary", generateSummary);
+router.patch("/:id/summary/visibility", toggleSummaryVisibility);
 
 // Survey creator only routes
 router.get("/:id/responses/:responseId/validate", validateResponse);

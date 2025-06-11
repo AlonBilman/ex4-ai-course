@@ -50,9 +50,12 @@ class MockLLMService {
   }
 
   async validateResponse(guidelines, response) {
+    // For testing purposes, mark responses containing "invalid" as invalid
+    const isInvalid = response.toLowerCase().includes('invalid');
+    
     return {
-      isValid: true,
-      feedback: 'Response meets all guidelines'
+      isValid: !isInvalid,
+      reason: isInvalid ? 'Response contains invalid content' : 'Response meets all guidelines'
     };
   }
 

@@ -8,6 +8,8 @@ Consider the following aspects:
 3. Language and tone
 4. Any specific requirements from guidelines
 
-Return a validation result with:
-- isValid: boolean
-- reason: string (explanation of validation result) 
+Return ONLY a JSON object in this exact format:
+{
+  "isValid": true or false,
+  "reason": "explanation of validation result"
+} 

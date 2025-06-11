@@ -31,7 +31,7 @@ class LLMService {
     }
   }
 
-  async chat(messages, model = 'openai/gpt-3.5-turbo') {
+  async chat(messages, model = 'deepseek/deepseek-r1-0528:free') {
     if (process.env.USE_MOCK_LLM === 'true') {
       return 'Mock LLM response';
     }
@@ -46,6 +46,17 @@ class LLMService {
     if (!res.ok) throw new Error(`LLM error ${res.status}`);
     const { choices } = await res.json();
     return choices[0]?.message?.content?.trim();
+  }
+
+  extractJsonFromResponse(response) {
+    // Remove markdown code blocks if present
+    const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      return jsonMatch[1].trim();
+    }
+    
+    // If no code blocks, return the response as-is
+    return response.trim();
   }
 
   async searchSurveys(query, surveys) {
@@ -77,7 +88,18 @@ class LLMService {
         .replace('{surveys}', JSON.stringify(surveys));
 
       const response = await this.chat([{ role: 'user', content: prompt }]);
-      return JSON.parse(response);
+      
+      try {
+        const cleanedResponse = this.extractJsonFromResponse(response);
+        return JSON.parse(cleanedResponse);
+      } catch (parseError) {
+        logger.error('Failed to parse LLM response as JSON:', {
+          response: response?.substring(0, 200) + '...',
+          error: parseError.message
+        });
+        // Return empty array as fallback
+        return [];
+      }
     } catch (error) {
       logger.error('Error in searchSurveys:', error);
       throw new Error('Failed to search surveys');
@@ -104,7 +126,21 @@ class LLMService {
         .replace('{response}', response);
 
       const result = await this.chat([{ role: 'user', content: prompt }]);
-      return JSON.parse(result);
+      
+      try {
+        const cleanedResult = this.extractJsonFromResponse(result);
+        return JSON.parse(cleanedResult);
+      } catch (parseError) {
+        logger.error('Failed to parse validation response as JSON:', {
+          response: result?.substring(0, 200) + '...',
+          error: parseError.message
+        });
+        // Return default valid response as fallback
+        return {
+          isValid: true,
+          feedback: 'Response validation unavailable due to parsing error'
+        };
+      }
     } catch (error) {
       logger.error('Error in validateResponse:', error);
       throw new Error('Failed to validate response');

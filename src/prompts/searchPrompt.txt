@@ -1,8 +1,18 @@
 Search for surveys that match the following query: {query}
 
+Available surveys: {surveys}
+
 Consider the following aspects:
 1. Survey title and description relevance
-2. Survey status (active/expired)
-3. Survey creator's domain expertise
+2. Survey area relevance 
+3. Permitted domains matching
 
-Return a list of matching surveys with reasons for each match. 
+Return ONLY a JSON array of matching surveys in this exact format:
+[
+  {
+    "survey": {survey_object},
+    "reason": "explanation of why it matches"
+  }
+]
+
+If no surveys match, return an empty array: [] 
