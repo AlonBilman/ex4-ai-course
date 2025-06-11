@@ -1,0 +1,15 @@
+Validate the following response against these guidelines: {guidelines}
+
+Response to validate: {response}
+
+Consider the following aspects:
+1. Response length and format
+2. Content relevance and appropriateness
+3. Language and tone
+4. Any specific requirements from guidelines
+
+Return ONLY a JSON object in this exact format:
+{
+  "isValid": true or false,
+  "reason": "explanation of validation result"
+} 

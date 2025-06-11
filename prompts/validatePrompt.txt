@@ -1,0 +1,25 @@
+Given the following response and guidelines:
+
+Response:
+{response}
+
+Guidelines:
+{guidelines}
+
+Please analyze the response against the guidelines and return a JSON object with the following structure:
+{
+  "isValid": boolean,
+  "feedback": "detailed feedback about the response",
+  "violations": [
+    {
+      "type": "violation_type",
+      "description": "description of the violation"
+    }
+  ]
+}
+
+Consider the following aspects:
+1. Content relevance to the survey question
+2. Adherence to permitted domains
+3. Compliance with response guidelines
+4. Appropriateness and professionalism 
