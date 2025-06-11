@@ -1,13 +1,17 @@
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const express = require('express');
 const request = require('supertest');
 const Survey = require('../models/survey.model');
 const User = require('../models/user.model');
-const responseRoutes = require('../routes/response.routes');
+const surveyRoutes = require('../routes/survey.routes');
 
 jest.setTimeout(30000);
+
+process.env.JWT_SECRET = 'test-secret-key';
+process.env.NODE_ENV = 'test';
 
 describe('Response Controller', () => {
   let mongoServer;
@@ -21,21 +25,22 @@ describe('Response Controller', () => {
     const mongoUri = mongoServer.getUri();
     await mongoose.connect(mongoUri);
 
-    // Create test users
-    const creatorPasswordHash = await bcrypt.hash('creator123', 10);
-    const userPasswordHash = await bcrypt.hash('user123', 10);
-
-    creator = await User.create({
+    // Create test users using the User model's save method for proper password hashing
+    const creatorUser = new User({
       username: 'creator',
       email: 'creator@example.com',
-      passwordHash: creatorPasswordHash
+      passwordHash: 'creator123'
     });
+    creator = await creatorUser.save();
+    creator.token = jwt.sign({ id: creator._id }, process.env.JWT_SECRET);
 
-    user = await User.create({
+    const testUser = new User({
       username: 'user',
       email: 'user@example.com',
-      passwordHash: userPasswordHash
+      passwordHash: 'user123'
     });
+    user = await testUser.save();
+    user.token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
     // Create test survey
     survey = await Survey.create({
@@ -54,7 +59,7 @@ describe('Response Controller', () => {
 
     app = express();
     app.use(express.json());
-    app.use('/surveys', responseRoutes);
+    app.use('/surveys', surveyRoutes);
   });
 
   afterAll(async () => {
@@ -63,7 +68,13 @@ describe('Response Controller', () => {
   });
 
   beforeEach(async () => {
-    await Survey.updateOne({ _id: survey._id }, { $set: { responses: [] } });
+    await Survey.updateOne({ _id: survey._id }, { 
+      $set: { 
+        responses: [],
+        isActive: true,
+        expiryDate: new Date(Date.now() + 86400000) // Reset expiry to future 
+      } 
+    });
   });
 
   describe('POST /surveys/:id/responses', () => {

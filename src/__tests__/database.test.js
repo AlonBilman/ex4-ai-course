@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const {
   connect,
   closeDatabase,
@@ -13,6 +14,10 @@ describe("Database Connection", () => {
     await connect();
   });
 
+  afterEach(async () => {
+    await clearDatabase();
+  });
+
   afterAll(async () => {
     await closeDatabase();
   });
@@ -23,10 +28,11 @@ describe("Database Connection", () => {
 
   it("should clear collections between tests", async () => {
     // Create a test user
+    const passwordHash = await bcrypt.hash("password123", 10);
     const user = await User.create({
       username: "testuser",
       email: "test@example.com",
-      password: "password123",
+      passwordHash: passwordHash,
     });
 
     // Verify user was created
@@ -51,11 +57,24 @@ describe("Database Connection", () => {
 });
 
 describe("User Model", () => {
+  beforeAll(async () => {
+    await connect();
+  });
+
+  afterEach(async () => {
+    await clearDatabase();
+  });
+
+  afterAll(async () => {
+    await closeDatabase();
+  });
+
   it("should create a user successfully", async () => {
+    const passwordHash = await bcrypt.hash("password123", 10);
     const userData = {
       username: "testuser",
       email: "test@example.com",
-      password: "password123",
+      passwordHash: passwordHash,
     };
 
     const user = new User(userData);
@@ -64,14 +83,15 @@ describe("User Model", () => {
     expect(user.username).toBe(userData.username);
     expect(user.email).toBe(userData.email);
     expect(user.passwordHash).toBeDefined();
-    expect(user.passwordHash).not.toBe(userData.password);
+    expect(user.passwordHash).toMatch(/^\$2[axy]\$\d+\$/); // bcrypt hash pattern
   });
 
   it("should not create a user with duplicate email", async () => {
+    const passwordHash = await bcrypt.hash("password123", 10);
     const userData = {
       username: "testuser",
       email: "test@example.com",
-      password: "password123",
+      passwordHash: passwordHash,
     };
 
     await User.create(userData);
@@ -82,11 +102,24 @@ describe("User Model", () => {
 });
 
 describe("Survey Model", () => {
+  beforeAll(async () => {
+    await connect();
+  });
+
+  afterEach(async () => {
+    await clearDatabase();
+  });
+
+  afterAll(async () => {
+    await closeDatabase();
+  });
+
   it("should create a survey successfully", async () => {
+    const passwordHash = await bcrypt.hash("password123", 10);
     const user = await User.create({
       username: "creator",
       email: "creator@example.com",
-      password: "password123",
+      passwordHash: passwordHash,
     });
 
     const surveyData = {
@@ -115,11 +148,24 @@ describe("Survey Model", () => {
 });
 
 describe("Response Model", () => {
+  beforeAll(async () => {
+    await connect();
+  });
+
+  afterEach(async () => {
+    await clearDatabase();
+  });
+
+  afterAll(async () => {
+    await closeDatabase();
+  });
+
   it("should create a response successfully", async () => {
+    const passwordHash = await bcrypt.hash("password123", 10);
     const user = await User.create({
       username: "respondent",
       email: "respondent@example.com",
-      password: "password123",
+      passwordHash: passwordHash,
     });
 
     const survey = await Survey.create({

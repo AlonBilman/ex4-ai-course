@@ -1,6 +1,6 @@
 // Set up environment before requiring app
 process.env.NODE_ENV = "test";
-process.env.JWT_SECRET = "test-secret";
+process.env.JWT_SECRET = "test-secret-key";
 process.env.USE_MOCK_LLM = "true";
 
 const request = require("supertest");
@@ -50,21 +50,20 @@ describe("Survey Controller", () => {
     app.use(express.json());
     app.use("/surveys", surveyRoutes);
 
-    // Create test users
-    const creatorPasswordHash = await bcrypt.hash("creator123", 10);
-    const userPasswordHash = await bcrypt.hash("user123", 10);
-
-    creator = await User.create({
+    // Create test users using User model save method for proper password hashing
+    const creatorUser = new User({
       username: "creator",
       email: "creator@example.com",
-      passwordHash: creatorPasswordHash,
+      passwordHash: "creator123",
     });
+    creator = await creatorUser.save();
 
-    user = await User.create({
+    const testUser = new User({
       username: "user",
       email: "user@example.com",
-      passwordHash: userPasswordHash,
+      passwordHash: "user123",
     });
+    user = await testUser.save();
 
     creatorToken = jwt.sign(
       { id: creator._id, role: creator.role },
@@ -91,13 +90,13 @@ describe("Survey Controller", () => {
     it("should create a survey with valid data", async () => {
       const surveyData = {
         title: "Test Survey",
-        description: "A test survey description",
-        questions: [
-          {
-            text: "What is your favorite food?",
-            type: "text",
-          },
-        ],
+        area: "Test Area",
+        guidelines: {
+          question: "What is your favorite food?",
+          permittedDomains: ["food", "dining"],
+          permittedResponses: "Any food-related responses are welcome",
+          summaryInstructions: "Summarize the food preferences"
+        },
         expiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
       };
 
@@ -117,6 +116,8 @@ describe("Survey Controller", () => {
         .set("Authorization", `Bearer ${creatorToken}`)
         .send({});
 
+      console.log('Response status:', res.status);
+      console.log('Response body:', res.body);
       expect(res.status).toBe(400);
       expect(res.body.error.message).toContain("required");
     });
@@ -128,13 +129,11 @@ describe("Survey Controller", () => {
     beforeEach(async () => {
       survey = await Survey.create({
         title: "Test Survey",
-        description: "A test survey description",
-        questions: [
-          {
-            text: "What is your favorite food?",
-            type: "text",
-          },
-        ],
+        area: "Test Area",
+        guidelines: {
+          question: "What is your favorite food?",
+          permittedResponses: "Any food-related responses are welcome"
+        },
         creator: creator._id,
         expiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
       });
@@ -145,32 +144,25 @@ describe("Survey Controller", () => {
         .post(`/surveys/${survey._id}/responses`)
         .set("Authorization", `Bearer ${userToken}`)
         .send({
-          answers: [
-            {
-              questionId: survey.questions[0]._id,
-              answer: "Pizza!",
-            },
-          ],
+          content: "Pizza!"
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.response.answers[0].answer).toBe("Pizza!");
+      expect(res.body.content).toBe("Pizza!");
     });
 
     it("should not allow response after expiry", async () => {
-      survey.expiryDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      await survey.save();
+      // Update the survey expiry date to past using updateOne to bypass validation
+      await Survey.updateOne(
+        { _id: survey._id },
+        { $set: { expiryDate: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+      );
 
       const res = await request(app)
         .post(`/surveys/${survey._id}/responses`)
         .set("Authorization", `Bearer ${userToken}`)
         .send({
-          answers: [
-            {
-              questionId: survey.questions[0]._id,
-              answer: "Late answer",
-            },
-          ],
+          content: "Late answer"
         });
 
       expect(res.status).toBe(400);
@@ -178,7 +170,7 @@ describe("Survey Controller", () => {
     });
 
     it("should not allow more than maxResponses", async () => {
-      survey.maxResponses = 2;
+      survey.maxResponses = 1;
       await survey.save();
 
       // Submit first response
@@ -186,38 +178,29 @@ describe("Survey Controller", () => {
         .post(`/surveys/${survey._id}/responses`)
         .set("Authorization", `Bearer ${userToken}`)
         .send({
-          answers: [
-            {
-              questionId: survey.questions[0]._id,
-              answer: "First",
-            },
-          ],
+          content: "First response"
         });
 
-      // Submit second response
-      await request(app)
-        .post(`/surveys/${survey._id}/responses`)
-        .set("Authorization", `Bearer ${userToken}`)
-        .send({
-          answers: [
-            {
-              questionId: survey.questions[0]._id,
-              answer: "Second",
-            },
-          ],
-        });
+      // Create another user for second response
+      const anotherUser = new User({
+        username: "another",
+        email: "another@example.com",
+        passwordHash: "another123",
+      });
+      await anotherUser.save();
+      
+      const anotherToken = jwt.sign(
+        { id: anotherUser._id, role: anotherUser.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
 
-      // Try to submit third response
+      // Try to submit second response which should fail due to maxResponses
       const res = await request(app)
         .post(`/surveys/${survey._id}/responses`)
-        .set("Authorization", `Bearer ${userToken}`)
+        .set("Authorization", `Bearer ${anotherToken}`)
         .send({
-          answers: [
-            {
-              questionId: survey.questions[0]._id,
-              answer: "Third",
-            },
-          ],
+          content: "Second response"
         });
 
       expect(res.status).toBe(400);

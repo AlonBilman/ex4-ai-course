@@ -21,7 +21,7 @@ const router = express.Router();
 
 // Public routes
 router.get("/", getSurveys);
-router.get("/search", searchSurveys);
+router.post("/search", searchSurveys);
 
 // Protected routes
 router.use(auth);

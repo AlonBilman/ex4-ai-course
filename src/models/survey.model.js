@@ -63,35 +63,43 @@ const summarySchema = new mongoose.Schema({
 });
 
 const surveySchema = new mongoose.Schema({
-  area: {
+  title: {
     type: String,
-    required: [true, 'Survey area is required'],
+    required: [true, 'Survey title is required'],
     trim: true
   },
-  question: {
+  area: {
     type: String,
-    required: [true, 'Survey question is required'],
+    required: false,
     trim: true
+  },
+  description: {
+    type: String,
+    trim: true
+  },
+  guidelines: {
+    question: {
+      type: String,
+      required: false,
+      trim: true
+    },
+    permittedDomains: [{
+      type: String,
+      trim: true
+    }],
+    permittedResponses: {
+      type: String,
+      trim: true
+    },
+    summaryInstructions: {
+      type: String,
+      trim: true
+    },
   },
   creator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'Survey creator is required']
-  },
-  permittedDomains: [{
-    type: String,
-    required: [true, 'At least one permitted domain is required'],
-    trim: true
-  }],
-  permittedResponses: {
-    type: String,
-    required: [true, 'Response guidelines are required'],
-    trim: true
-  },
-  summaryInstructions: {
-    type: String,
-    required: [true, 'Summary instructions are required'],
-    trim: true
   },
   expiryDate: {
     type: Date,
@@ -113,12 +121,19 @@ const surveySchema = new mongoose.Schema({
   },
   responses: [responseSchema],
   summary: summarySchema,
+  questions: [questionSchema],
+  maxResponses: {
+    type: Number,
+  },
+}, {
+  timestamps: true
 });
 
 // Index for faster queries
 surveySchema.index({ creator: 1, createdAt: -1 });
 surveySchema.index({ expiryDate: 1 });
 surveySchema.index({ isActive: 1 });
+surveySchema.index({ "guidelines.question": "text", area: "text", title: "text" });
 
 // Virtual for checking if survey is expired
 surveySchema.virtual('isExpired').get(function() {
@@ -126,11 +141,8 @@ surveySchema.virtual('isExpired').get(function() {
 });
 
 // Method to check if survey can accept more responses
-surveySchema.methods.canAcceptResponses = async function() {
-  if (this.isExpired || !this.isActive) {
-    return false;
-  }
-  return true;
+surveySchema.methods.canAcceptResponses = function() {
+  return this.isActive && !this.isExpired;
 };
 
 // Method to check if user has already responded

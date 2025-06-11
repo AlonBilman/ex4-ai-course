@@ -30,6 +30,10 @@ const validateRequest = (schema) => {
   };
 };
 
+// Alias for compatibility with existing routes
+const validateResponse = validateRequest;
+
 module.exports = {
-  validateRequest
+  validateRequest,
+  validateResponse
 }; 

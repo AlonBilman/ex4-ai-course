@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/user.model");
 const { logger } = require("../config/logger");
-const { userSchema } = require("../utils/validation.schemas");
+const { userSchema, loginSchema } = require("../utils/validation.schemas");
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -48,7 +48,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { error } = userSchema.validate(req.body);
+    const { error } = loginSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ error: { message: error.details[0].message } });
     }

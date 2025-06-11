@@ -5,7 +5,10 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const bcrypt = require('bcryptjs');
 const authRoutes = require('../routes/auth.routes');
 const User = require('../models/user.model');
-const { connect, closeDatabase, clearDatabase } = require('./helpers/test.helper');
+const { connect, closeDatabase, clearDatabase, setupTestEnv } = require('./helpers/test.helper');
+
+// Setup test environment
+setupTestEnv();
 
 describe('Auth Controller', () => {
   let app;
@@ -109,11 +112,12 @@ describe('Auth Controller', () => {
 
   describe('POST /auth/login', () => {
     beforeEach(async () => {
-      await User.create({
+      const user = new User({
         username: 'testuser',
         email: 'test@example.com',
-        passwordHash: await bcrypt.hash('password123', 10)
+        passwordHash: 'password123'
       });
+      await user.save();
     });
 
     it('should login with valid credentials', async () => {

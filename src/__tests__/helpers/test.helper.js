@@ -1,26 +1,24 @@
 const mongoose = require("mongoose");
 const { MongoMemoryServer } = require("mongodb-memory-server");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const User = require("../../models/user.model");
+const Survey = require("../../models/survey.model");
 const logger = require('../../utils/logger');
 
 let mongoServer;
 
 const connect = async () => {
-  try {
-    // Disconnect from any existing connections
-    await mongoose.disconnect();
+  if (mongoose.connection.readyState === 1) {
+    // Already connected
+    return;
+  }
 
-    // Create an in-memory MongoDB server
+  try {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
 
-    // Connect to the in-memory database
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-
+    await mongoose.connect(mongoUri);
     logger.info('Connected to in-memory MongoDB');
   } catch (error) {
     logger.error('Error connecting to in-memory MongoDB:', error);
@@ -30,8 +28,13 @@ const connect = async () => {
 
 const closeDatabase = async () => {
   try {
-    await mongoose.disconnect();
-    await mongoServer.stop();
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect();
+    }
+    if (mongoServer) {
+      await mongoServer.stop();
+      mongoServer = undefined;
+    }
     logger.info('Disconnected from in-memory MongoDB');
   } catch (error) {
     logger.error('Error closing in-memory MongoDB connection:', error);
@@ -41,11 +44,13 @@ const closeDatabase = async () => {
 
 const clearDatabase = async () => {
   try {
-    const collections = mongoose.connection.collections;
-    for (const key in collections) {
-      await collections[key].deleteMany();
+    if (mongoose.connection.readyState === 1) {
+      const collections = mongoose.connection.collections;
+      for (const key in collections) {
+        await collections[key].deleteMany();
+      }
+      logger.info('Cleared all collections in in-memory MongoDB');
     }
-    logger.info('Cleared all collections in in-memory MongoDB');
   } catch (error) {
     logger.error('Error clearing in-memory MongoDB collections:', error);
     throw error;
@@ -64,26 +69,34 @@ const setupTestEnv = () => {
   process.env.NODE_ENV = "test";
   process.env.JWT_SECRET = "test-secret";
   process.env.USE_MOCK_LLM = "true";
+  process.env.REGISTRATION_SECRET = "test-registration-secret";
 };
 
 const createTestUser = async (userData = {}) => {
+  const defaultPassword = 'password123';
+  const hashedPassword = await bcrypt.hash(userData.password || defaultPassword, 10);
+  
   const defaultUser = {
     username: 'testuser',
     email: 'test@example.com',
-    passwordHash: 'password123',
+    passwordHash: hashedPassword,
     role: 'user'
   };
 
-  const user = new User({ ...defaultUser, ...userData });
+  // Remove password from userData if it exists (we've already hashed it)
+  const { password, ...cleanUserData } = userData;
+  
+  const user = new User({ ...defaultUser, ...cleanUserData });
   await user.save();
   return user;
 };
 
 const createTestSurvey = async (user, surveyData = {}) => {
   const defaultSurvey = {
+    title: "Test Survey",
     area: "Test Area",
-    question: "Test Question?",
     guidelines: {
+      question: "Test Question?",
       permittedDomains: ["test.com"],
       permittedResponses: "Test guidelines",
       summaryInstructions: "Test instructions",
