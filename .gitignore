@@ -47,9 +47,17 @@ data/db/
 .env.production.local
 
 # Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+=======
+# Node modules
+node_modules/
+
+# Env files
+.env
+
+# Logs
+logs
+*.log
+
 
 # Optional npm cache directory
 .npm
@@ -65,3 +73,14 @@ yarn-error.log*
 
 # Yarn Integrity file
 .yarn-integrity 
+=======
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Editor settings
+.vscode/
+.idea/
