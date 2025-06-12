@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frontend-Backend Integration Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+      }
+      .success {
+        color: green;
+      }
+      .error {
+        color: red;
+      }
+      .info {
+        color: blue;
+      }
+      button {
+        margin: 5px;
+        padding: 10px 15px;
+      }
+      #results {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f5f5f5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Frontend-Backend Integration Test</h1>
+
+    <div class="test-section">
+      <h2>API Endpoint Tests</h2>
+      <button onclick="testBackendConnection()">Test Backend Connection</button>
+      <button onclick="testAuthEndpoints()">Test Auth Endpoints</button>
+      <button onclick="testSurveyEndpoints()">Test Survey Endpoints</button>
+      <button onclick="testAIEndpoints()">Test AI Endpoints</button>
+      <button onclick="runAllTests()">Run All Tests</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script src="assets/js/utils.js"></script>
+    <script>
+      const results = document.getElementById("results");
+
+      function log(message, type = "info") {
+        const div = document.createElement("div");
+        div.className = type;
+        div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        results.appendChild(div);
+        console.log(message);
+      }
+
+      async function testBackendConnection() {
+        log("Testing backend connection...", "info");
+        try {
+          const response = await fetch(`${API_BASE_URL}/health`);
+          if (response.ok || response.status === 404) {
+            log("✅ Backend is reachable", "success");
+            return true;
+          } else {
+            log(`❌ Backend returned status: ${response.status}`, "error");
+            return false;
+          }
+        } catch (error) {
+          log(`❌ Backend connection failed: ${error.message}`, "error");
+          return false;
+        }
+      }
+
+      async function testAuthEndpoints() {
+        log("Testing authentication endpoints...", "info");
+
+        // Test registration endpoint structure
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}), // Empty body to test validation
+          });
+
+          if (response.status === 400) {
+            log("✅ Auth register endpoint responds to validation", "success");
+          } else {
+            log(
+              `⚠️ Auth register returned unexpected status: ${response.status}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          log(`❌ Auth register test failed: ${error.message}`, "error");
+        }
+
+        // Test login endpoint structure
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}), // Empty body to test validation
+          });
+
+          if (response.status === 400) {
+            log("✅ Auth login endpoint responds to validation", "success");
+          } else {
+            log(
+              `⚠️ Auth login returned unexpected status: ${response.status}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          log(`❌ Auth login test failed: ${error.message}`, "error");
+        }
+      }
+
+      async function testSurveyEndpoints() {
+        log("Testing survey endpoints...", "info");
+
+        // Test get surveys (public endpoint)
+        try {
+          const response = await fetch(`${API_BASE_URL}/surveys`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.surveys !== undefined) {
+              log("✅ GET /surveys endpoint working correctly", "success");
+            } else {
+              log("⚠️ GET /surveys response format unexpected", "error");
+            }
+          } else {
+            log(`❌ GET /surveys failed: ${response.status}`, "error");
+          }
+        } catch (error) {
+          log(`❌ Survey endpoints test failed: ${error.message}`, "error");
+        }
+
+        // Test survey creation endpoint (should require auth)
+        try {
+          const response = await fetch(`${API_BASE_URL}/surveys`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+
+          if (response.status === 401) {
+            log(
+              "✅ POST /surveys correctly requires authentication",
+              "success"
+            );
+          } else {
+            log(
+              `⚠️ POST /surveys returned unexpected status: ${response.status}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          log(`❌ Survey creation test failed: ${error.message}`, "error");
+        }
+      }
+
+      async function testAIEndpoints() {
+        log("Testing AI endpoints...", "info");
+
+        // Test search endpoint
+        try {
+          const response = await fetch(`${API_BASE_URL}/surveys/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: "test" }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.matches !== undefined) {
+              log("✅ POST /surveys/search endpoint working", "success");
+            } else {
+              log("⚠️ Search response format unexpected", "error");
+            }
+          } else if (response.status === 401) {
+            log(
+              "✅ POST /surveys/search requires authentication (expected)",
+              "success"
+            );
+          } else {
+            log(`❌ Search endpoint failed: ${response.status}`, "error");
+          }
+        } catch (error) {
+          log(`❌ AI search test failed: ${error.message}`, "error");
+        }
+      }
+
+      async function runAllTests() {
+        log("🚀 Starting comprehensive integration tests...", "info");
+        results.innerHTML = "";
+
+        await testBackendConnection();
+        await testAuthEndpoints();
+        await testSurveyEndpoints();
+        await testAIEndpoints();
+
+        log("✅ All tests completed. Check results above.", "success");
+      }
+
+      // Test JavaScript function availability
+      function testJSFunctions() {
+        log("Testing JavaScript function availability...", "info");
+
+        const functions = [
+          "getToken",
+          "setToken",
+          "removeToken",
+          "isLoggedIn",
+          "getUserInfo",
+          "authenticatedFetch",
+          "showError",
+          "showSuccess",
+        ];
+
+        functions.forEach((funcName) => {
+          if (typeof window[funcName] === "function") {
+            log(`✅ Function ${funcName} is available`, "success");
+          } else {
+            log(`❌ Function ${funcName} is missing`, "error");
+          }
+        });
+      }
+
+      // Run JS function test on load
+      document.addEventListener("DOMContentLoaded", () => {
+        testJSFunctions();
+      });
+    </script>
+  </body>
+</html>

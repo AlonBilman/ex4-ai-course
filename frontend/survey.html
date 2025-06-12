@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Survey - Survey Server</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body class="dashboard">
+    <nav class="navbar">
+      <div class="container">
+        <h1>
+          <a href="dashboard.html" style="text-decoration: none; color: inherit"
+            >Survey Server</a
+          >
+        </h1>
+        <div class="user-info">
+          <span class="username" id="username">Loading...</span>
+          <button id="logoutButton" class="btn-logout">Logout</button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <div id="success-message" class="success-message"></div>
+      <div id="error-message" class="error-message"></div>
+
+      <div id="loading" class="loading-container" style="display: none">
+        <div class="loading-spinner"></div>
+        <p>Loading survey...</p>
+      </div>
+
+      <div class="survey-detail">
+        <!-- Survey details will be populated here -->
+      </div>
+
+      <div class="survey-actions" style="text-align: center; margin-top: 30px">
+        <a href="dashboard.html" class="btn btn-secondary"
+          >← Back to Dashboard</a
+        >
+      </div>
+    </main>
+
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/survey.js"></script>
+  </body>
+</html>

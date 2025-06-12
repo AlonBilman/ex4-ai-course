@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Survey - Survey Server</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body class="dashboard">
+    <nav class="navbar">
+      <div class="container">
+        <h1>
+          <a href="dashboard.html" style="text-decoration: none; color: inherit"
+            >Survey Server</a
+          >
+        </h1>
+        <div class="user-info">
+          <span class="username" id="username">Loading...</span>
+          <button id="logoutButton" class="btn-logout">Logout</button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <div id="success-message" class="success-message"></div>
+      <div id="error-message" class="error-message"></div>
+
+      <section class="create-survey-section">
+        <div class="section-header">
+          <h2>Create New Survey</h2>
+          <p>Create a new survey to collect responses from the community</p>
+        </div>
+
+        <div class="create-survey-form">
+          <form id="createSurveyForm" class="survey-form">
+            <div class="form-group">
+              <label for="title">Survey Title *</label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                required
+                placeholder="Enter a descriptive title for your survey"
+                maxlength="200"
+              />
+              <small id="titleCounter" class="character-counter"
+                >0/200 characters</small
+              >
+            </div>
+            <div class="form-group">
+              <label for="area">Survey Area *</label>
+              <input
+                type="text"
+                id="area"
+                name="area"
+                required
+                placeholder="e.g., Education, Technology, Health, Food, etc."
+                maxlength="100"
+              />
+              <small id="areaCounter" class="character-counter"
+                >0/100 characters</small
+              >
+              <small class="help-text">
+                The main domain or category for your survey
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="question">Survey Question *</label>
+              <textarea
+                id="question"
+                name="question"
+                required
+                rows="3"
+                placeholder="What specific question are you asking participants?"
+                maxlength="1000"
+              ></textarea>
+              <small id="questionCounter" class="character-counter"
+                >0/1000 characters</small
+              >
+              <small class="help-text">
+                The main question users will answer in your survey
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label for="permittedDomains">Permitted Domains *</label>
+              <div id="domainsContainer">
+                <input
+                  type="text"
+                  id="permittedDomains"
+                  name="permittedDomains"
+                  required
+                  placeholder="e.g., strengths, weaknesses, opportunities"
+                  maxlength="100"
+                />
+              </div>
+              <button type="button" id="addDomainBtn" class="btn btn-text">
+                + Add Another Domain
+              </button>
+              <small class="help-text">
+                Specify relevant response categories (e.g., for SWOT: strengths,
+                weaknesses, opportunities, threats)
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="permittedResponses">Response Guidelines *</label>
+              <textarea
+                id="permittedResponses"
+                name="permittedResponses"
+                required
+                rows="4"
+                placeholder="e.g., Use proper language, limit responses to two paragraphs, no references to competitor Z"
+                maxlength="500"
+              ></textarea>
+              <small id="permittedResponsesCounter" class="character-counter"
+                >0/500 characters</small
+              >
+              <small class="help-text">
+                Describe what types of responses are expected and any guidelines
+                participants should follow
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="summaryInstructions">Summary Instructions *</label>
+              <textarea
+                id="summaryInstructions"
+                name="summaryInstructions"
+                required
+                rows="3"
+                placeholder="e.g., Summarize for 6th-8th grade reading level with humor, or focus on actionable insights without competitor analysis"
+                maxlength="300"
+              ></textarea>
+              <small id="summaryInstructionsCounter" class="character-counter"
+                >0/300 characters</small
+              >
+              <small class="help-text">
+                Tell the AI how you'd like the responses to be summarized (tone,
+                audience, focus, etc.)
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label for="expiryDate">Expiry Date *</label>
+              <input type="date" id="expiryDate" name="expiryDate" required />
+              <small class="help-text">
+                When should this survey stop accepting responses? (Must be a
+                future date)
+              </small>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                id="previewButton"
+                class="btn btn-secondary"
+              >
+                Preview Survey
+              </button>
+              <button type="submit" id="submitButton" class="btn btn-primary">
+                Create Survey
+              </button>
+              <a href="dashboard.html" class="btn btn-text">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal" style="display: none">
+      <div class="modal-content large-modal">
+        <div class="modal-header">
+          <h3>Survey Preview</h3>
+          <button
+            type="button"
+            class="modal-close"
+            onclick="closePreviewModal()"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="previewContent">
+            <!-- Preview content will be populated here -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="secondary-btn"
+            onclick="closePreviewModal()"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/create-survey.js"></script>
+  </body>
+</html>

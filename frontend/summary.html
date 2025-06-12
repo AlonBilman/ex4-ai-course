@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Summary Management - Survey Client</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Navigation Header -->
+      <header class="nav-header">
+        <h1>📋 AI Survey Summaries</h1>
+        <nav class="nav-links">
+          <a href="dashboard.html">📊 Dashboard</a>
+          <a href="search.html">🔍 Search</a>
+          <a href="summary.html" class="active">📋 Summary</a>
+          <a href="validate.html">✅ Validate</a>
+          <button id="logout-btn" class="logout-btn">🚪 Logout</button>
+        </nav>
+      </header>
+
+      <!-- Summary Management Interface -->
+      <div class="summary-container">
+        <div class="summary-header">
+          <h2>AI-Generated Survey Summaries</h2>
+          <p>
+            Generate intelligent summaries of survey responses using AI. Manage
+            visibility and share insights with participants.
+          </p>
+        </div>
+
+        <!-- My Surveys Filter -->
+        <div class="filter-section">
+          <div class="filter-controls">
+            <label for="filter-select">📊 Show Surveys:</label>
+            <select id="filter-select" class="filter-select">
+              <option value="my-surveys">My Surveys Only</option>
+              <option value="all-surveys">All Surveys (View Only)</option>
+            </select>
+            <button id="refresh-btn" class="refresh-btn">🔄 Refresh</button>
+          </div>
+          <div class="filter-stats">
+            <span id="survey-count" class="stat-item">Loading surveys...</span>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-surveys" class="loading-state">
+          <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Loading surveys...</p>
+          </div>
+        </div>
+
+        <!-- Surveys List -->
+        <div
+          id="surveys-container"
+          class="surveys-container"
+          style="display: none"
+        >
+          <!-- Survey cards will be populated here -->
+        </div>
+
+        <!-- No Surveys Message -->
+        <div id="no-surveys" class="no-surveys" style="display: none">
+          <div class="no-surveys-content">
+            <span class="no-surveys-icon">📋</span>
+            <h3>No Surveys Found</h3>
+            <p>You don't have any surveys yet.</p>
+            <a href="dashboard.html" class="create-survey-link"
+              >📝 Create Your First Survey</a
+            >
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="error-message" style="display: none">
+          <span class="error-icon">⚠️</span>
+          <span id="error-text"></span>
+        </div>
+      </div>
+
+      <!-- Summary Modal -->
+      <div id="summary-modal" class="modal" style="display: none">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 id="modal-title">AI Summary</h3>
+            <button class="modal-close" id="close-modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div id="summary-content" class="summary-content">
+              <!-- Summary content will be loaded here -->
+            </div>
+            <div
+              id="summary-loading"
+              class="summary-loading"
+              style="display: none"
+            >
+              <div class="loading-spinner"></div>
+              <p>Generating AI summary...</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              id="copy-summary-btn"
+              class="copy-btn"
+              style="display: none"
+            >
+              📋 Copy Summary
+            </button>
+            <button id="close-summary-btn" class="secondary-btn">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirm Modal -->
+      <div id="confirm-modal" class="modal" style="display: none">
+        <div class="modal-content confirm-modal">
+          <div class="modal-header">
+            <h3 id="confirm-title">Confirm Action</h3>
+          </div>
+          <div class="modal-body">
+            <p id="confirm-message"></p>
+          </div>
+          <div class="modal-footer">
+            <button id="confirm-yes" class="danger-btn">Yes</button>
+            <button id="confirm-no" class="secondary-btn">No</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/summary.js"></script>
+  </body>
+</html>
