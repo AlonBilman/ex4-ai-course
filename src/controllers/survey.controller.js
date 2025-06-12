@@ -42,13 +42,21 @@ const createSurvey = async (req, res) => {
 // Get all surveys
 const getSurveys = async (req, res) => {
   try {
-    const surveys = await Survey.find()
-      .populate("creator", "username")
-      .select("-responses");
+    const surveys = await Survey.find().populate("creator", "username");
+
+    // Transform surveys to include response count without full response data
+    const surveysWithCount = surveys.map((survey) => {
+      const surveyObj = survey.toObject();
+      surveyObj.responseCount = surveyObj.responses
+        ? surveyObj.responses.length
+        : 0;
+      delete surveyObj.responses; // Remove full response data for performance
+      return surveyObj;
+    });
 
     res.json({
       message: "Surveys retrieved successfully",
-      surveys,
+      surveys: surveysWithCount,
     });
   } catch (error) {
     logger.error("Error fetching surveys:", error);
@@ -155,7 +163,9 @@ const updateSurvey = async (req, res) => {
       { new: true }
     ).populate("creator", "username");
 
-    logger.info(`Survey updated: ${updatedSurvey.area} by ${req.user.username}`);
+    logger.info(
+      `Survey updated: ${updatedSurvey.area} by ${req.user.username}`
+    );
 
     res.json({
       message: "Survey updated successfully",
@@ -218,7 +228,7 @@ const deleteSurvey = async (req, res) => {
 // Submit response
 const submitResponse = async (req, res) => {
   try {
-    const { responseSchema } = require('../utils/validation.schemas');
+    const { responseSchema } = require("../utils/validation.schemas");
     const { error } = responseSchema.validate(req.body);
     if (error) {
       return res.status(400).json({
@@ -254,7 +264,7 @@ const submitResponse = async (req, res) => {
     // Check if user already submitted a response
     const userId = req.user._id?.toString?.() ?? req.user.id?.toString?.();
     const existingResponse = survey.responses.find(
-      (r) => r.user.toString() === userId,
+      (r) => r.user.toString() === userId
     );
 
     if (existingResponse) {
@@ -283,7 +293,7 @@ const submitResponse = async (req, res) => {
 
     await survey.save();
     logger.info(
-      `Response submitted to survey: ${survey.area} by ${req.user.username}`,
+      `Response submitted to survey: ${survey.area} by ${req.user.username}`
     );
 
     const newResponse = survey.responses[survey.responses.length - 1];
@@ -307,28 +317,28 @@ const searchSurveys = async (req, res) => {
       return res.status(400).json({
         error: {
           code: "MISSING_QUERY",
-          message: "Search query is required"
-        }
+          message: "Search query is required",
+        },
       });
     }
 
     const surveys = await Survey.find()
-      .select('title description area permittedDomains')
+      .select("title description area permittedDomains")
       .lean();
 
     const matches = await llmService.searchSurveys(query, surveys);
 
     res.json({
       message: "Search completed successfully",
-      matches
+      matches,
     });
   } catch (error) {
     logger.error("Error searching surveys:", error);
     res.status(500).json({
       error: {
         code: "SEARCH_ERROR",
-        message: "Error searching surveys"
-      }
+        message: "Error searching surveys",
+      },
     });
   }
 };
@@ -338,13 +348,13 @@ const validateResponse = async (req, res) => {
   try {
     const { id: surveyId, responseId } = req.params;
     const survey = await Survey.findById(surveyId);
-    
+
     if (!survey) {
       return res.status(404).json({
         error: {
           code: "SURVEY_NOT_FOUND",
-          message: "Survey not found"
-        }
+          message: "Survey not found",
+        },
       });
     }
 
@@ -352,8 +362,8 @@ const validateResponse = async (req, res) => {
       return res.status(403).json({
         error: {
           code: "NOT_CREATOR",
-          message: "Only the survey creator can validate responses"
-        }
+          message: "Only the survey creator can validate responses",
+        },
       });
     }
 
@@ -362,8 +372,8 @@ const validateResponse = async (req, res) => {
       return res.status(404).json({
         error: {
           code: "RESPONSE_NOT_FOUND",
-          message: "Response not found"
-        }
+          message: "Response not found",
+        },
       });
     }
 
@@ -374,15 +384,15 @@ const validateResponse = async (req, res) => {
 
     res.json({
       message: "Response validation completed",
-      validationResult
+      validationResult,
     });
   } catch (error) {
     logger.error("Error validating response:", error);
     res.status(500).json({
       error: {
         code: "VALIDATION_ERROR",
-        message: "Error validating response"
-      }
+        message: "Error validating response",
+      },
     });
   }
 };
@@ -390,15 +400,17 @@ const validateResponse = async (req, res) => {
 // Validate all responses in a survey
 const validateAllResponses = async (req, res) => {
   try {
-    const survey = await Survey.findById(req.params.id)
-      .populate('responses.user', 'username');
-    
+    const survey = await Survey.findById(req.params.id).populate(
+      "responses.user",
+      "username"
+    );
+
     if (!survey) {
       return res.status(404).json({
         error: {
           code: "SURVEY_NOT_FOUND",
-          message: "Survey not found"
-        }
+          message: "Survey not found",
+        },
       });
     }
 
@@ -406,8 +418,8 @@ const validateAllResponses = async (req, res) => {
       return res.status(403).json({
         error: {
           code: "NOT_CREATOR",
-          message: "Only the survey creator can validate responses"
-        }
+          message: "Only the survey creator can validate responses",
+        },
       });
     }
 
@@ -417,29 +429,29 @@ const validateAllResponses = async (req, res) => {
         survey.guidelines.permittedResponses,
         response.content
       );
-      
+
       if (!validationResult.isValid) {
         validationResults.push({
           surveyId: survey._id,
           responseId: response._id,
           userId: response.user._id,
           username: response.user.username,
-          reason: validationResult.reason
+          reason: validationResult.reason,
         });
       }
     }
 
     res.json({
       message: "Response validation completed",
-      validationResults
+      validationResults,
     });
   } catch (error) {
     logger.error("Error validating responses:", error);
     res.status(500).json({
       error: {
         code: "VALIDATION_ERROR",
-        message: "Error validating responses"
-      }
+        message: "Error validating responses",
+      },
     });
   }
 };
@@ -448,15 +460,17 @@ const validateAllResponses = async (req, res) => {
 const generateSummary = async (req, res) => {
   try {
     const surveyId = req.params.id;
-    const survey = await Survey.findById(surveyId)
-      .populate('responses.user', 'username');
+    const survey = await Survey.findById(surveyId).populate(
+      "responses.user",
+      "username"
+    );
 
     if (!survey) {
       return res.status(404).json({
         error: {
           code: "SURVEY_NOT_FOUND",
-          message: "Survey not found"
-        }
+          message: "Survey not found",
+        },
       });
     }
 
@@ -464,8 +478,8 @@ const generateSummary = async (req, res) => {
       return res.status(403).json({
         error: {
           code: "NOT_CREATOR",
-          message: "Only the survey creator can generate summaries"
-        }
+          message: "Only the survey creator can generate summaries",
+        },
       });
     }
 
@@ -473,8 +487,8 @@ const generateSummary = async (req, res) => {
       return res.status(400).json({
         error: {
           code: "NO_RESPONSES",
-          message: "Cannot generate summary for survey with no responses"
-        }
+          message: "Cannot generate summary for survey with no responses",
+        },
       });
     }
 
@@ -486,22 +500,22 @@ const generateSummary = async (req, res) => {
     survey.summary = {
       content: summary,
       isVisible: false,
-      generatedAt: new Date()
+      generatedAt: new Date(),
     };
 
     await survey.save();
 
     res.json({
       message: "Summary generated successfully",
-      summary: survey.summary
+      summary: survey.summary,
     });
   } catch (error) {
     logger.error("Error generating summary:", error);
     res.status(500).json({
       error: {
         code: "SUMMARY_ERROR",
-        message: "Error generating summary"
-      }
+        message: "Error generating summary",
+      },
     });
   }
 };
@@ -550,7 +564,7 @@ const toggleSummaryVisibility = async (req, res) => {
     survey.summary.isVisible = req.body.isVisible;
     await survey.save();
     logger.info(
-      `Summary visibility toggled for survey: ${survey.area} by ${req.user.username}`,
+      `Summary visibility toggled for survey: ${survey.area} by ${req.user.username}`
     );
 
     res.json({
@@ -571,7 +585,7 @@ const toggleSummaryVisibility = async (req, res) => {
 // Update a user's own response
 const updateResponse = async (req, res) => {
   try {
-    const { responseSchema } = require('../utils/validation.schemas');
+    const { responseSchema } = require("../utils/validation.schemas");
     const { error } = responseSchema.validate(req.body);
     if (error) {
       return res.status(400).json({
@@ -599,7 +613,7 @@ const updateResponse = async (req, res) => {
         },
       });
     }
-    
+
     const response = survey.responses.id(req.params.responseId);
     if (!response) {
       return res.status(404).json({
@@ -609,7 +623,7 @@ const updateResponse = async (req, res) => {
         },
       });
     }
-    
+
     // Check if user owns the response
     if (response.user.toString() !== req.user.id.toString()) {
       return res.status(403).json({
@@ -619,12 +633,12 @@ const updateResponse = async (req, res) => {
         },
       });
     }
-    
+
     response.content = req.body.content;
     response.updatedAt = new Date();
     await survey.save();
     logger.info(
-      `Response updated for survey: ${survey.area} by ${req.user.username}`,
+      `Response updated for survey: ${survey.area} by ${req.user.username}`
     );
     res.status(200).json(response);
   } catch (error) {
@@ -650,7 +664,7 @@ const removeResponse = async (req, res) => {
         },
       });
     }
-    
+
     const response = survey.responses.id(req.params.responseId);
     if (!response) {
       return res.status(404).json({
@@ -660,9 +674,12 @@ const removeResponse = async (req, res) => {
         },
       });
     }
-    
+
     // Check if user owns the response or is the survey creator
-    if (response.user.toString() !== req.user.id.toString() && survey.creator.toString() !== req.user.id.toString()) {
+    if (
+      response.user.toString() !== req.user.id.toString() &&
+      survey.creator.toString() !== req.user.id.toString()
+    ) {
       return res.status(403).json({
         error: {
           code: "UNAUTHORIZED",
@@ -670,11 +687,11 @@ const removeResponse = async (req, res) => {
         },
       });
     }
-    
+
     survey.responses.pull(req.params.responseId);
     await survey.save();
     logger.info(
-      `Response removed from survey: ${survey.area} by ${req.user.username}`,
+      `Response removed from survey: ${survey.area} by ${req.user.username}`
     );
     res.status(200).json({
       message: "Response deleted successfully",
@@ -694,13 +711,13 @@ const removeResponse = async (req, res) => {
 const closeSurvey = async (req, res) => {
   try {
     const survey = await Survey.findById(req.params.id);
-    
+
     if (!survey) {
       return res.status(404).json({
         error: {
           code: "SURVEY_NOT_FOUND",
-          message: "Survey not found"
-        }
+          message: "Survey not found",
+        },
       });
     }
 
@@ -708,8 +725,8 @@ const closeSurvey = async (req, res) => {
       return res.status(403).json({
         error: {
           code: "NOT_CREATOR",
-          message: "Only the survey creator can close the survey"
-        }
+          message: "Only the survey creator can close the survey",
+        },
       });
     }
 
@@ -717,8 +734,8 @@ const closeSurvey = async (req, res) => {
       return res.status(400).json({
         error: {
           code: "SURVEY_ALREADY_CLOSED",
-          message: "Survey is already closed"
-        }
+          message: "Survey is already closed",
+        },
       });
     }
 
@@ -729,15 +746,15 @@ const closeSurvey = async (req, res) => {
 
     res.json({
       message: "Survey closed successfully",
-      survey
+      survey,
     });
   } catch (error) {
     logger.error("Error closing survey:", error);
     res.status(500).json({
       error: {
         code: "CLOSE_ERROR",
-        message: "Error closing survey"
-      }
+        message: "Error closing survey",
+      },
     });
   }
 };
@@ -756,5 +773,5 @@ module.exports = {
   toggleSummaryVisibility,
   updateResponse,
   removeResponse,
-  closeSurvey
+  closeSurvey,
 };

@@ -177,11 +177,10 @@
           .map((survey) => createSurveyCard(survey))
           .join("");
       }
-
       function createSurveyCard(survey) {
         const isExpired = new Date(survey.expiryDate) < new Date();
         const isActive = survey.isActive && !isExpired;
-        const responseCount = survey.responses ? survey.responses.length : 0;
+        const responseCount = survey.responseCount || 0;
 
         return `
           <div class="border border-gray-200 rounded-lg p-4 mb-4 hover:shadow-md transition-shadow">

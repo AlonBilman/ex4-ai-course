@@ -2019,172 +2019,199 @@ body {
   min-width: 120px;
 }
 
-/* Survey Preview Styles */
-.survey-preview {
-  line-height: 1.6;
+/* Additional styles for the new survey form */
+
+/* Field error styles */
+.field-error {
+  color: #e53e3e;
+  font-size: 12px;
+  margin-top: 4px;
+  display: none;
 }
 
+/* Domain input group styles */
+.domain-input-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.domain-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+}
+
+.domain-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.remove-domain-btn {
+  background: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.remove-domain-btn:hover {
+  background: #c53030;
+}
+
+/* Survey detail page styles */
 .survey-header {
   margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e1e5e9;
 }
 
 .survey-header h2 {
   color: #333;
-  margin-bottom: 15px;
-  font-size: 1.8em;
+  margin-bottom: 10px;
 }
 
 .survey-meta {
   display: flex;
-  gap: 30px;
-  font-size: 14px;
-  color: #666;
+  gap: 15px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
-.survey-description,
-.survey-question,
-.survey-guidelines,
-.summary-instructions {
-  margin-bottom: 25px;
+.survey-area {
+  background: #f0f4f8;
+  color: #2d3748;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
 }
 
-.survey-description h4,
-.survey-question h4,
-.survey-guidelines h4,
-.summary-instructions h4 {
-  color: #333;
-  margin-bottom: 10px;
-  font-size: 16px;
+.survey-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.survey-description p,
-.survey-question p,
-.survey-guidelines p,
-.summary-instructions p {
-  color: #555;
-  line-height: 1.6;
-  margin-bottom: 10px;
+.survey-status.open {
+  background: #c6f6d5;
+  color: #22543d;
 }
 
-.permitted-domains {
-  margin-top: 15px;
+.survey-status.closed {
+  background: #fed7d7;
+  color: #742a2a;
 }
 
-.domains {
+.survey-expiry {
+  color: #718096;
+  font-size: 14px;
+}
+
+.survey-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.survey-section h3 {
+  color: #2d3748;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.domains-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 8px;
 }
 
-.domain-tag {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.max-responses {
-  background: #e8f4f8;
-  padding: 10px 15px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  color: #333;
-}
-
-.response-form-preview {
-  background: #f8f9fa;
-  padding: 20px;
+.response-card {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  border: 1px solid #e1e5e9;
-}
-
-.response-form-preview h4 {
-  color: #333;
+  padding: 16px;
   margin-bottom: 15px;
 }
 
-.response-form-preview .form-group {
-  margin: 0;
+.response-actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
 }
 
-.response-form-preview label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #333;
+.character-counter {
+  color: #666;
+  font-size: 12px;
+  margin-top: 5px;
 }
 
-.response-form-preview textarea {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e1e5e9;
-  border-radius: 6px;
-  min-height: 100px;
-  margin-bottom: 15px;
-  background: white;
-  color: #999;
-  font-style: italic;
+.info-message {
+  background: #e6fffa;
+  color: #234e52;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #38b2ac;
 }
 
-.response-form-preview button {
-  background: #e1e5e9;
-  color: #999;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: not-allowed;
+/* Button variants */
+.btn-danger {
+  background: #e53e3e;
+  color: white;
 }
 
-/* Loading state for create survey */
-.survey-form .loading {
-  opacity: 0.7;
-  pointer-events: none;
+.btn-danger:hover {
+  background: #c53030;
+  transform: translateY(-1px);
 }
 
-/* Responsive Design for Create Survey */
+.btn-text {
+  background: transparent;
+  color: #667eea;
+  border: 1px solid #667eea;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.btn-text:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .create-survey-form {
-    padding: 25px 20px;
+  .survey-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 
-  .form-actions {
+  .response-actions {
+    flex-direction: column;
+  }
+
+  .domain-input-group {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .form-actions .btn {
-    min-width: auto;
-    margin: 0;
-  }
-
-  .survey-meta {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .survey-form input[type="datetime-local"],
-  .survey-form input[type="number"] {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .create-survey-section {
-    padding: 0 15px;
-  }
-
-  .section-header h2 {
-    font-size: 1.6em;
-  }
-
-  .create-survey-form {
-    padding: 20px 15px;
+  .remove-domain-btn {
+    margin-left: 0;
+    margin-top: 5px;
+    align-self: flex-end;
   }
 }

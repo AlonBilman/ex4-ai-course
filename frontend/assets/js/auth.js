@@ -125,40 +125,16 @@ function initializeDashboard() {
  * Initialize survey page functionality
  */
 function initializeSurveyPage() {
-  // Redirect if not logged in
-  if (!isLoggedIn()) {
-    redirectToLogin();
-    return;
-  }
-
-  // Display user information
-  displayUserInfo();
-
-  // Initialize logout functionality
-  const logoutButton = document.getElementById("logoutButton");
-  if (logoutButton) {
-    logoutButton.addEventListener("click", handleLogout);
-  }
+  // This function will be overridden by survey.html's inline script
+  // The actual initialization happens in the HTML file
 }
 
 /**
  * Initialize create survey page functionality
  */
 function initializeCreateSurveyPage() {
-  // Redirect if not logged in
-  if (!isLoggedIn()) {
-    redirectToLogin();
-    return;
-  }
-
-  // Display user information
-  displayUserInfo();
-
-  // Initialize logout functionality
-  const logoutButton = document.getElementById("logoutButton");
-  if (logoutButton) {
-    logoutButton.addEventListener("click", handleLogout);
-  }
+  // This function will be overridden by create-survey.html's inline script
+  // The actual initialization happens in the HTML file
 }
 
 /**

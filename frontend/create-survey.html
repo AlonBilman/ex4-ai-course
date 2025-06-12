@@ -3,201 +3,580 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Create Survey - Survey Server</title>
-    <link rel="stylesheet" href="assets/css/style.css" />
+    <title>Create Survey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="dashboard">
-    <nav class="navbar">
-      <div class="container">
-        <h1>
-          <a href="dashboard.html" style="text-decoration: none; color: inherit"
-            >Survey Server</a
-          >
-        </h1>
-        <div class="user-info">
-          <span class="username" id="username">Loading...</span>
-          <button id="logoutButton" class="btn-logout">Logout</button>
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav
+      class="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50"
+    >
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+          <h1 class="text-xl font-bold text-gray-800">Survey Server</h1>
+          <div class="flex items-center space-x-4">
+            <span id="username" class="text-gray-600"></span>
+            <button
+              onclick="window.location.href='dashboard.html'"
+              class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     </nav>
 
-    <main class="main-content">
-      <div id="success-message" class="success-message"></div>
-      <div id="error-message" class="error-message"></div>
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+      <!-- Alert Messages -->
+      <div id="success-message" class="hidden mb-6"></div>
+      <div id="error-message" class="hidden mb-6"></div>
 
-      <section class="create-survey-section">
-        <div class="section-header">
-          <h2>Create New Survey</h2>
-          <p>Create a new survey to collect responses from the community</p>
+      <!-- Create Survey Form -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="border-b pb-4 mb-6">
+          <h1 class="text-2xl font-bold text-gray-900">Create New Survey</h1>
+          <p class="text-gray-600 mt-2">
+            Fill out the form below to create a new survey for your community.
+          </p>
         </div>
 
-        <div class="create-survey-form">
-          <form id="createSurveyForm" class="survey-form">
-            <div class="form-group">
-              <label for="title">Survey Title *</label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                required
-                placeholder="Enter a descriptive title for your survey"
-                maxlength="200"
-              />
-              <small id="titleCounter" class="character-counter"
-                >0/200 characters</small
-              >
+        <form id="createSurveyForm" class="space-y-6">
+          <!-- Title -->
+          <div>
+            <label
+              for="title"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Survey Title <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter a descriptive title for your survey"
+              maxlength="100"
+            />
+            <div class="text-right text-xs text-gray-500 mt-1">
+              <span id="titleCharCount">0</span>/100 characters
             </div>
-            <div class="form-group">
-              <label for="area">Survey Area *</label>
-              <input
-                type="text"
-                id="area"
-                name="area"
-                required
-                placeholder="e.g., Education, Technology, Health, Food, etc."
-                maxlength="100"
-              />
-              <small id="areaCounter" class="character-counter"
-                >0/100 characters</small
-              >
-              <small class="help-text">
-                The main domain or category for your survey
-              </small>
-            </div>
-            <div class="form-group">
-              <label for="question">Survey Question *</label>
-              <textarea
-                id="question"
-                name="question"
-                required
-                rows="3"
-                placeholder="What specific question are you asking participants?"
-                maxlength="1000"
-              ></textarea>
-              <small id="questionCounter" class="character-counter"
-                >0/1000 characters</small
-              >
-              <small class="help-text">
-                The main question users will answer in your survey
-              </small>
-            </div>
+          </div>
 
-            <div class="form-group">
-              <label for="permittedDomains">Permitted Domains *</label>
-              <div id="domainsContainer">
+          <!-- Area -->
+          <div>
+            <label
+              for="area"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Survey Area <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="area"
+              name="area"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., Education, Technology, Healthcare"
+              maxlength="50"
+            />
+            <div class="text-right text-xs text-gray-500 mt-1">
+              <span id="areaCharCount">0</span>/50 characters
+            </div>
+          </div>
+
+          <!-- Question -->
+          <div>
+            <label
+              for="question"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Survey Question <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              id="question"
+              name="question"
+              required
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+              placeholder="What question do you want to ask participants?"
+              maxlength="500"
+            ></textarea>
+            <div class="text-right text-xs text-gray-500 mt-1">
+              <span id="questionCharCount">0</span>/500 characters
+            </div>
+          </div>
+
+          <!-- Expiry Date -->
+          <div>
+            <label
+              for="expiryDate"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Expiry Date <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              id="expiryDate"
+              name="expiryDate"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p class="text-xs text-gray-500 mt-1">
+              Select when this survey should stop accepting responses
+            </p>
+          </div>
+
+          <!-- Permitted Domains -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Permitted Domains <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-gray-500 mb-3">
+              Add categories or domains that responses should focus on (e.g.,
+              "strengths", "weaknesses", "improvements")
+            </p>
+
+            <div class="space-y-2">
+              <div class="flex gap-2">
                 <input
                   type="text"
-                  id="permittedDomains"
-                  name="permittedDomains"
-                  required
-                  placeholder="e.g., strengths, weaknesses, opportunities"
-                  maxlength="100"
+                  id="domainInput"
+                  class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter a domain (e.g., strengths, improvements)"
+                  maxlength="30"
                 />
+                <button
+                  type="button"
+                  id="addDomainBtn"
+                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Add
+                </button>
               </div>
-              <button type="button" id="addDomainBtn" class="btn btn-text">
-                + Add Another Domain
-              </button>
-              <small class="help-text">
-                Specify relevant response categories (e.g., for SWOT: strengths,
-                weaknesses, opportunities, threats)
-              </small>
-            </div>
-            <div class="form-group">
-              <label for="permittedResponses">Response Guidelines *</label>
-              <textarea
-                id="permittedResponses"
-                name="permittedResponses"
-                required
-                rows="4"
-                placeholder="e.g., Use proper language, limit responses to two paragraphs, no references to competitor Z"
-                maxlength="500"
-              ></textarea>
-              <small id="permittedResponsesCounter" class="character-counter"
-                >0/500 characters</small
-              >
-              <small class="help-text">
-                Describe what types of responses are expected and any guidelines
-                participants should follow
-              </small>
-            </div>
-            <div class="form-group">
-              <label for="summaryInstructions">Summary Instructions *</label>
-              <textarea
-                id="summaryInstructions"
-                name="summaryInstructions"
-                required
-                rows="3"
-                placeholder="e.g., Summarize for 6th-8th grade reading level with humor, or focus on actionable insights without competitor analysis"
-                maxlength="300"
-              ></textarea>
-              <small id="summaryInstructionsCounter" class="character-counter"
-                >0/300 characters</small
-              >
-              <small class="help-text">
-                Tell the AI how you'd like the responses to be summarized (tone,
-                audience, focus, etc.)
-              </small>
-            </div>
 
-            <div class="form-group">
-              <label for="expiryDate">Expiry Date *</label>
-              <input type="date" id="expiryDate" name="expiryDate" required />
-              <small class="help-text">
-                When should this survey stop accepting responses? (Must be a
-                future date)
-              </small>
+              <!-- Domain tags container -->
+              <div
+                id="domainsContainer"
+                class="flex flex-wrap gap-2 min-h-[40px] p-2 border border-gray-200 rounded-lg bg-gray-50"
+              >
+                <span
+                  class="text-gray-500 text-sm italic"
+                  id="domainsPlaceholder"
+                  >Domains will appear here as you add them</span
+                >
+              </div>
             </div>
+          </div>
 
-            <div class="form-actions">
+          <!-- Permitted Responses -->
+          <div>
+            <label
+              for="permittedResponses"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Response Guidelines <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              id="permittedResponses"
+              name="permittedResponses"
+              required
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+              placeholder="Describe what kinds of responses are acceptable. Example: 'Responses should be constructive, specific, and related to the topic areas. Please provide concrete examples or suggestions.'"
+              maxlength="1000"
+            ></textarea>
+            <div class="text-right text-xs text-gray-500 mt-1">
+              <span id="responsesCharCount">0</span>/1000 characters
+            </div>
+          </div>
+
+          <!-- Summary Instructions -->
+          <div>
+            <label
+              for="summaryInstructions"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              AI Summary Instructions <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              id="summaryInstructions"
+              name="summaryInstructions"
+              required
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+              placeholder="Make the summary readable for 6th–8th graders with some humor. Focus on key themes and actionable insights."
+              maxlength="500"
+            ></textarea>
+            <div class="text-right text-xs text-gray-500 mt-1">
+              <span id="summaryCharCount">0</span>/500 characters
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Instructions for how the AI should summarize responses to this
+              survey
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-6 border-t">
+            <div class="flex gap-3">
               <button
-                type="button"
-                id="previewButton"
-                class="btn btn-secondary"
+                type="submit"
+                id="submitButton"
+                class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
               >
-                Preview Survey
-              </button>
-              <button type="submit" id="submitButton" class="btn btn-primary">
                 Create Survey
               </button>
-              <a href="dashboard.html" class="btn btn-text">Cancel</a>
+              <button
+                type="button"
+                onclick="window.location.href='dashboard.html'"
+                class="bg-gray-600 text-white px-8 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+              >
+                Cancel
+              </button>
             </div>
-          </form>
-        </div>
-      </section>
-    </main>
-
-    <!-- Preview Modal -->
-    <div id="previewModal" class="modal" style="display: none">
-      <div class="modal-content large-modal">
-        <div class="modal-header">
-          <h3>Survey Preview</h3>
-          <button
-            type="button"
-            class="modal-close"
-            onclick="closePreviewModal()"
-          >
-            ×
-          </button>
-        </div>
-        <div class="modal-body">
-          <div id="previewContent">
-            <!-- Preview content will be populated here -->
           </div>
-        </div>
-        <div class="modal-footer">
-          <button
-            type="button"
-            class="secondary-btn"
-            onclick="closePreviewModal()"
-          >
-            Close
-          </button>
-        </div>
+        </form>
       </div>
-    </div>
-
+    </main>
+    <!-- Scripts -->
     <script src="assets/js/utils.js"></script>
     <script src="assets/js/auth.js"></script>
-    <script src="assets/js/create-survey.js"></script>
+    <script>
+      // Global variables
+      let permittedDomains = [];
+
+      // Initialize create survey page function for auth.js
+      function initializeCreateSurveyPage() {
+        // Check authentication
+        if (!isLoggedIn()) {
+          redirectToLogin();
+          return;
+        }
+
+        // Update user info in navbar
+        updateUserInfo();
+
+        // Set minimum date to current date/time
+        setMinimumDate();
+
+        // Setup form handlers
+        setupFormHandlers();
+
+        // Setup domain management
+        setupDomainManagement();
+      }
+
+      /**
+       * Update user info in the navbar
+       */
+      function updateUserInfo() {
+        const user = getUserInfo();
+        const usernameElement = document.getElementById("username");
+        if (user && usernameElement) {
+          usernameElement.textContent = user.username || "User";
+        }
+      }
+
+      /**
+       * Set minimum date to current date/time
+       */
+      function setMinimumDate() {
+        const now = new Date();
+        // Add 1 hour to current time as minimum
+        now.setHours(now.getHours() + 1);
+        const isoString = now.toISOString().slice(0, 16); // Format for datetime-local
+        document.getElementById("expiryDate").min = isoString;
+      }
+
+      /**
+       * Setup form event handlers
+       */
+      function setupFormHandlers() {
+        // Character counters
+        setupCharacterCounter("title", "titleCharCount", 100);
+        setupCharacterCounter("area", "areaCharCount", 50);
+        setupCharacterCounter("question", "questionCharCount", 500);
+        setupCharacterCounter("permittedResponses", "responsesCharCount", 1000);
+        setupCharacterCounter("summaryInstructions", "summaryCharCount", 500);
+
+        // Form submission
+        const form = document.getElementById("createSurveyForm");
+        form.addEventListener("submit", handleFormSubmit);
+      }
+
+      /**
+       * Setup character counter for a field
+       */
+      function setupCharacterCounter(fieldId, counterId, maxLength) {
+        const field = document.getElementById(fieldId);
+        const counter = document.getElementById(counterId);
+
+        field.addEventListener("input", function () {
+          const currentLength = field.value.length;
+          counter.textContent = currentLength;
+
+          if (currentLength > maxLength * 0.9) {
+            counter.parentElement.className =
+              "text-right text-xs text-orange-500 mt-1";
+          } else if (currentLength === maxLength) {
+            counter.parentElement.className =
+              "text-right text-xs text-red-500 mt-1";
+          } else {
+            counter.parentElement.className =
+              "text-right text-xs text-gray-500 mt-1";
+          }
+        });
+      }
+
+      /**
+       * Setup domain management functionality
+       */
+      function setupDomainManagement() {
+        const domainInput = document.getElementById("domainInput");
+        const addDomainBtn = document.getElementById("addDomainBtn");
+
+        // Add domain on button click
+        addDomainBtn.addEventListener("click", addDomain);
+
+        // Add domain on Enter key
+        domainInput.addEventListener("keypress", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            addDomain();
+          }
+        });
+      }
+
+      /**
+       * Add a new domain
+       */
+      function addDomain() {
+        const domainInput = document.getElementById("domainInput");
+        const domain = domainInput.value.trim();
+
+        if (!domain) {
+          showError("Please enter a domain before adding");
+          return;
+        }
+
+        if (domain.length > 30) {
+          showError("Domain name is too long (maximum 30 characters)");
+          return;
+        }
+
+        if (permittedDomains.includes(domain.toLowerCase())) {
+          showError("This domain has already been added");
+          return;
+        }
+
+        if (permittedDomains.length >= 10) {
+          showError("Maximum 10 domains allowed");
+          return;
+        }
+
+        // Add domain to array
+        permittedDomains.push(domain);
+
+        // Clear input
+        domainInput.value = "";
+
+        // Update display
+        updateDomainsDisplay();
+      }
+
+      /**
+       * Remove a domain
+       */
+      function removeDomain(index) {
+        permittedDomains.splice(index, 1);
+        updateDomainsDisplay();
+      }
+
+      /**
+       * Update domains display
+       */
+      function updateDomainsDisplay() {
+        const container = document.getElementById("domainsContainer");
+        const placeholder = document.getElementById("domainsPlaceholder");
+
+        if (permittedDomains.length === 0) {
+          placeholder.style.display = "block";
+          container.innerHTML =
+            '<span class="text-gray-500 text-sm italic" id="domainsPlaceholder">Domains will appear here as you add them</span>';
+        } else {
+          container.innerHTML = permittedDomains
+            .map(
+              (domain, index) => `
+                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                        ${escapeHtml(domain)}
+                        <button 
+                            type="button" 
+                            onclick="removeDomain(${index})"
+                            class="text-blue-600 hover:text-blue-800 font-bold"
+                            title="Remove domain"
+                        >
+                            ×
+                        </button>
+                    </span>
+                `
+            )
+            .join("");
+        }
+      }
+
+      /**
+       * Handle form submission
+       */
+      async function handleFormSubmit(event) {
+        event.preventDefault();
+
+        // Validate form
+        if (!validateForm()) {
+          return;
+        }
+
+        // Prepare form data
+        const formData = prepareFormData();
+
+        try {
+          // Disable submit button
+          const submitBtn = document.getElementById("submitButton");
+          const originalText = submitBtn.textContent;
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Creating Survey...";
+
+          await submitSurvey(formData);
+        } catch (error) {
+          console.error("Error creating survey:", error);
+          showError("Failed to create survey: " + error.message);
+
+          // Re-enable submit button
+          const submitBtn = document.getElementById("submitButton");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Create Survey";
+        }
+      }
+
+      /**
+       * Validate form data
+       */
+      function validateForm() {
+        // Check required fields
+        const requiredFields = [
+          "title",
+          "area",
+          "question",
+          "expiryDate",
+          "permittedResponses",
+          "summaryInstructions",
+        ];
+
+        for (const fieldId of requiredFields) {
+          const field = document.getElementById(fieldId);
+          if (!field.value.trim()) {
+            showError(`${getFieldLabel(fieldId)} is required`);
+            field.focus();
+            return false;
+          }
+        }
+
+        // Check domains
+        if (permittedDomains.length === 0) {
+          showError("At least one permitted domain is required");
+          document.getElementById("domainInput").focus();
+          return false;
+        }
+
+        // Check expiry date
+        const expiryDate = new Date(
+          document.getElementById("expiryDate").value
+        );
+        const now = new Date();
+
+        if (expiryDate <= now) {
+          showError("Expiry date must be in the future");
+          document.getElementById("expiryDate").focus();
+          return false;
+        }
+
+        return true;
+      }
+
+      /**
+       * Get user-friendly field label
+       */
+      function getFieldLabel(fieldId) {
+        const labels = {
+          title: "Survey Title",
+          area: "Survey Area",
+          question: "Survey Question",
+          expiryDate: "Expiry Date",
+          permittedResponses: "Response Guidelines",
+          summaryInstructions: "AI Summary Instructions",
+        };
+        return labels[fieldId] || fieldId;
+      }
+
+      /**
+       * Prepare form data for submission
+       */
+      function prepareFormData() {
+        return {
+          title: document.getElementById("title").value.trim(),
+          area: document.getElementById("area").value.trim(),
+          guidelines: {
+            question: document.getElementById("question").value.trim(),
+            permittedDomains: permittedDomains,
+            permittedResponses: document
+              .getElementById("permittedResponses")
+              .value.trim(),
+            summaryInstructions: document
+              .getElementById("summaryInstructions")
+              .value.trim(),
+          },
+          expiryDate: document.getElementById("expiryDate").value,
+        };
+      }
+
+      /**
+       * Submit survey to API
+       */
+      async function submitSurvey(formData) {
+        const response = await authenticatedFetch(`${API_BASE_URL}/surveys`, {
+          method: "POST",
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error?.message || "Failed to create survey"
+          );
+        }
+
+        const result = await response.json();
+
+        // Show success message
+        showSuccess("Survey created successfully! Redirecting to dashboard...");
+
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 2000);
+      }
+
+      /**
+       * Escape HTML to prevent XSS
+       */
+      function escapeHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    </script>
   </body>
 </html>
