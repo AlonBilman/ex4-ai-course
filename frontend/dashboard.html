@@ -9,7 +9,9 @@
   </head>
   <body class="bg-gray-50 min-h-screen">
     <!-- Simple Navigation Bar -->
-    <nav class="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
+    <nav
+      class="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50"
+    >
       <div class="max-w-6xl mx-auto px-4">
         <div class="flex justify-between items-center h-16">
           <h1 class="text-xl font-bold text-gray-800">Survey Server</h1>
@@ -48,7 +50,6 @@
           Create New Survey
         </button>
       </div>
-
       <!-- Natural Language Search -->
       <div class="mb-8 bg-white p-6 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">Search Surveys</h3>
@@ -60,10 +61,16 @@
             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <button
+            id="searchButton"
             onclick="searchSurveys()"
-            class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
           >
-            Search
+            <span id="searchButtonText">Search</span>
+            <div id="searchSpinner" class="hidden ml-2">
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+              ></div>
+            </div>
           </button>
         </div>
 
@@ -213,9 +220,11 @@
           </div>
         `;
       }
-
       async function searchSurveys() {
         const searchInput = document.getElementById("searchInput");
+        const searchButton = document.getElementById("searchButton");
+        const searchButtonText = document.getElementById("searchButtonText");
+        const searchSpinner = document.getElementById("searchSpinner");
         const query = searchInput?.value?.trim();
         const searchResults = document.getElementById("searchResults");
         const searchResultsContainer = document.getElementById(
@@ -226,6 +235,18 @@
           showError("Please enter a search query");
           return;
         }
+
+        // Show loading state
+        if (searchButton) {
+          searchButton.disabled = true;
+          searchButton.classList.add("disabled:bg-gray-400");
+        }
+        if (searchButtonText) searchButtonText.textContent = "Searching...";
+        if (searchSpinner) searchSpinner.classList.remove("hidden");
+        if (searchInput) searchInput.disabled = true;
+
+        // Hide previous results
+        if (searchResults) searchResults.style.display = "none";
 
         try {
           const response = await authenticatedFetch(
@@ -254,19 +275,26 @@
             searchResultsContainer.innerHTML = matches
               .map(
                 (match) => `
-              <div class="border border-gray-200 rounded p-3 mb-2">
+              <div class="border border-gray-200 rounded p-3 mb-2 hover:bg-gray-50 transition-colors">
                 <div class="flex justify-between items-start">
-                  <div>
-                    <h5 class="font-medium">${escapeHtml(
+                  <div class="flex-1">
+                    <h5 class="font-medium text-gray-900">${escapeHtml(
                       match.survey?.title || "Unknown Survey"
                     )}</h5>
-                    <p class="text-sm text-gray-600">${escapeHtml(
+                    <p class="text-sm text-gray-600 mt-1">${escapeHtml(
                       match.reason || "No reason provided"
                     )}</p>
+                    ${
+                      match.survey?.area
+                        ? `<span class="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${escapeHtml(
+                            match.survey.area
+                          )}</span>`
+                        : ""
+                    }
                   </div>
                   <a 
                     href="survey.html?id=${match.survey?._id}" 
-                    class="text-blue-600 hover:text-blue-800 text-sm"
+                    class="ml-4 bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700 transition-colors"
                   >
                     View
                   </a>
@@ -281,16 +309,39 @@
         } catch (error) {
           console.error("Error searching surveys:", error);
           showError("Search failed. Please try again.");
+        } finally {
+          // Reset loading state
+          if (searchButton) {
+            searchButton.disabled = false;
+            searchButton.classList.remove("disabled:bg-gray-400");
+          }
+          if (searchButtonText) searchButtonText.textContent = "Search";
+          if (searchSpinner) searchSpinner.classList.add("hidden");
+          if (searchInput) searchInput.disabled = false;
         }
       }
-
       function setupSearchInput() {
         const searchInput = document.getElementById("searchInput");
+        const searchButton = document.getElementById("searchButton");
+
         if (searchInput) {
           searchInput.addEventListener("keypress", function (event) {
             if (event.key === "Enter") {
               event.preventDefault();
-              searchSurveys();
+              // Only search if button is not disabled
+              if (searchButton && !searchButton.disabled) {
+                searchSurveys();
+              }
+            }
+          });
+
+          // Clear results when input is cleared
+          searchInput.addEventListener("input", function (event) {
+            if (!event.target.value.trim()) {
+              const searchResults = document.getElementById("searchResults");
+              if (searchResults) {
+                searchResults.style.display = "none";
+              }
             }
           });
         }
