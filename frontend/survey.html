@@ -205,6 +205,51 @@
           </div>
         </div>
 
+        <!-- Public Summary Section (for all users when summary is public) -->
+        <div
+          id="publicSummarySection"
+          class="hidden bg-white rounded-lg shadow-lg p-6 mt-6"
+        >
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            📋 Survey Summary
+          </h3>
+
+          <!-- Public Summary Display -->
+          <div
+            id="publicSummaryDisplay"
+            class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+          >
+            <div class="flex justify-between items-start mb-3">
+              <h4
+                class="text-md font-medium text-blue-900 flex items-center gap-2"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                AI-Generated Summary
+              </h4>
+            </div>
+            <div
+              id="publicSummaryContent"
+              class="bg-white p-4 rounded border text-gray-700 whitespace-pre-wrap"
+            ></div>
+            <div
+              id="publicSummaryMeta"
+              class="mt-3 text-sm text-blue-700"
+            ></div>
+          </div>
+        </div>
+
         <!-- Creator Response Management Section -->
         <div
           id="creatorModerationSection"
@@ -213,6 +258,164 @@
           <h3 class="text-lg font-semibold text-gray-900 mb-4">
             Response Moderation (Creator Only)
           </h3>
+
+          <!-- AI Tools Section -->
+          <div
+            id="aiToolsSection"
+            class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4"
+          >
+            <h4 class="text-md font-medium text-blue-900 mb-3">🤖 AI Tools</h4>
+            <div class="flex flex-wrap gap-3">
+              <!-- Generate Summary Button -->
+              <button
+                id="generateSummaryBtn"
+                onclick="generateAISummary()"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2"
+                title="Generate AI summary of all responses"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                Generate Summary
+              </button>
+
+              <!-- Validate Responses Button -->
+              <button
+                id="validateResponsesBtn"
+                onclick="validateAllResponses()"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2"
+                title="Validate all responses against survey guidelines"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                Validate Responses
+              </button>
+
+              <!-- Toggle Summary Visibility Button -->
+              <button
+                id="toggleSummaryVisibilityBtn"
+                onclick="toggleSummaryVisibility()"
+                class="hidden bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-2"
+                title="Toggle summary visibility for participants"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  ></path>
+                </svg>
+                <span id="toggleSummaryText">Make Summary Public</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- AI Summary Display -->
+          <div
+            id="summaryDisplaySection"
+            class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4"
+          >
+            <div class="flex justify-between items-start mb-3">
+              <h4
+                class="text-md font-medium text-amber-900 flex items-center gap-2"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                AI Summary
+              </h4>
+              <button
+                onclick="hideSummary()"
+                class="text-amber-700 hover:text-amber-900 text-sm"
+                title="Hide summary"
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              id="summaryContent"
+              class="bg-white p-4 rounded border text-gray-700 whitespace-pre-wrap"
+            ></div>
+            <div id="summaryMeta" class="mt-3 text-sm text-amber-700"></div>
+          </div>
+
+          <!-- Validation Results Display -->
+          <div
+            id="validationResultsSection"
+            class="hidden mb-6 bg-red-50 border border-red-200 rounded-lg p-4"
+          >
+            <div class="flex justify-between items-start mb-3">
+              <h4
+                class="text-md font-medium text-red-900 flex items-center gap-2"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  ></path>
+                </svg>
+                Validation Results
+              </h4>
+              <button
+                onclick="hideValidationResults()"
+                class="text-red-700 hover:text-red-900 text-sm"
+                title="Hide validation results"
+              >
+                ✕
+              </button>
+            </div>
+            <div id="validationContent" class="space-y-3"></div>
+          </div>
 
           <!-- All Responses List -->
           <div id="allResponsesList" class="space-y-4">
@@ -399,6 +602,9 @@
           statusElement.className = "font-medium text-gray-600";
         } // Display appropriate response section
         displayResponseSection(canRespond);
+
+        // Display public summary if available and visible
+        displayPublicSummary();
 
         // Display creator moderation section if user is creator
         displayCreatorModerationSection();
@@ -745,11 +951,13 @@
         const allResponsesList = document.getElementById("allResponsesList");
         const noResponsesMessage =
           document.getElementById("noResponsesMessage");
-
         moderationSection.classList.remove("hidden");
 
         // Show all responses for creators (backend already provides all responses for creators)
         const allResponses = currentSurvey.responses || [];
+
+        // Update AI tools section based on responses and existing summary
+        updateAIToolsSection(allResponses);
 
         if (allResponses.length === 0) {
           noResponsesMessage.classList.remove("hidden");
@@ -801,6 +1009,61 @@
       }
 
       /**
+       * Display public summary for all users (when summary is public)
+       */ function displayPublicSummary() {
+        const user = getUserInfo();
+        if (!user || !currentSurvey) return;
+
+        const isCreator =
+          currentSurvey.creator && currentSurvey.creator._id === user.userId;
+        const publicSummarySection = document.getElementById(
+          "publicSummarySection"
+        );
+
+        if (!publicSummarySection) return;
+
+        // Only show public summary if:
+        // 1. Survey has a summary
+        // 2. Summary is marked as visible (public)
+        // 3. User is NOT the creator (creators see it in moderation section)
+        if (
+          currentSurvey.summary &&
+          currentSurvey.summary.content &&
+          currentSurvey.summary.isVisible &&
+          !isCreator
+        ) {
+          const summaryContent = document.getElementById(
+            "publicSummaryContent"
+          );
+          const summaryMeta = document.getElementById("publicSummaryMeta");
+
+          if (summaryContent && summaryMeta) {
+            summaryContent.textContent = currentSurvey.summary.content;
+            summaryMeta.innerHTML = `
+              Generated: ${formatDate(currentSurvey.summary.generatedAt)} | 
+              <span class="text-blue-600 font-medium">Public Summary</span>
+            `;
+
+            publicSummarySection.classList.remove("hidden");
+            console.log("Public summary displayed for non-creator user");
+          }
+        } else {
+          // Hide public summary section if conditions not met
+          publicSummarySection.classList.add("hidden");
+          console.log("Public summary hidden - conditions not met:", {
+            hasSummary: !!currentSurvey.summary,
+            hasContent: !!(
+              currentSurvey.summary && currentSurvey.summary.content
+            ),
+            isVisible: !!(
+              currentSurvey.summary && currentSurvey.summary.isVisible
+            ),
+            isCreator: isCreator,
+          });
+        }
+      }
+
+      /**
        * Delete a response as the survey creator
        */
       async function deleteResponseAsCreator(responseId, username) {
@@ -837,6 +1100,387 @@
           console.error("Error deleting response:", error);
           showError("Failed to delete response: " + error.message);
         }
+      }
+      /**
+       * Update AI tools section based on survey state
+       */
+      function updateAIToolsSection(responses) {
+        const generateBtn = document.getElementById("generateSummaryBtn");
+        const validateBtn = document.getElementById("validateResponsesBtn");
+        const toggleBtn = document.getElementById("toggleSummaryVisibilityBtn");
+
+        // Check if elements exist before manipulating them
+        if (!generateBtn || !validateBtn || !toggleBtn) {
+          console.warn("AI tools elements not found in DOM");
+          return;
+        }
+
+        // Enable/disable buttons based on response count
+        const hasResponses = responses && responses.length > 0;
+        generateBtn.disabled = !hasResponses;
+        validateBtn.disabled = !hasResponses;
+
+        // Update button text and enable state
+        if (!hasResponses) {
+          generateBtn.innerHTML =
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>No Responses';
+          validateBtn.innerHTML =
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>No Responses';
+          generateBtn.className = generateBtn.className.replace(
+            "bg-blue-600 hover:bg-blue-700",
+            "bg-gray-400 cursor-not-allowed"
+          );
+          validateBtn.className = validateBtn.className.replace(
+            "bg-green-600 hover:bg-green-700",
+            "bg-gray-400 cursor-not-allowed"
+          );
+        } else {
+          generateBtn.innerHTML =
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>Generate Summary';
+          validateBtn.innerHTML =
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Validate Responses';
+          generateBtn.className = generateBtn.className.replace(
+            "bg-gray-400 cursor-not-allowed",
+            "bg-blue-600 hover:bg-blue-700"
+          );
+          validateBtn.className = validateBtn.className.replace(
+            "bg-gray-400 cursor-not-allowed",
+            "bg-green-600 hover:bg-green-700"
+          );
+        }
+
+        // Show/hide summary visibility toggle based on existing summary
+        if (currentSurvey.summary && currentSurvey.summary.content) {
+          toggleBtn.classList.remove("hidden");
+          const isVisible = currentSurvey.summary.isVisible;
+          const toggleText = document.getElementById("toggleSummaryText");
+          if (toggleText) {
+            toggleText.textContent = isVisible
+              ? "Make Summary Private"
+              : "Make Summary Public";
+          }
+
+          // Show existing summary
+          displayExistingSummary(currentSurvey.summary);
+        } else {
+          toggleBtn.classList.add("hidden");
+        }
+      }
+
+      /**
+       * Generate AI Summary
+       */
+      async function generateAISummary() {
+        if (
+          !currentSurvey ||
+          !currentSurvey.responses ||
+          currentSurvey.responses.length === 0
+        ) {
+          showError("No responses available to summarize");
+          return;
+        }
+
+        const generateBtn = document.getElementById("generateSummaryBtn");
+        if (!generateBtn) {
+          showError("Generate summary button not found");
+          return;
+        }
+
+        const originalContent = generateBtn.innerHTML;
+
+        try {
+          // Show loading state
+          generateBtn.disabled = true;
+          generateBtn.innerHTML =
+            '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Generating...';
+
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/summary`,
+            {
+              method: "POST",
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to generate summary"
+            );
+          }
+
+          const data = await response.json();
+
+          if (data.summary) {
+            // Update current survey object
+            currentSurvey.summary = data.summary;
+
+            // Display the new summary
+            displayExistingSummary(data.summary);
+
+            // Update AI tools section
+            updateAIToolsSection(currentSurvey.responses);
+
+            showSuccess("AI summary generated successfully!");
+          } else {
+            throw new Error("No summary returned from server");
+          }
+        } catch (error) {
+          console.error("Error generating summary:", error);
+          showError("Failed to generate summary: " + error.message);
+        } finally {
+          // Restore button
+          generateBtn.disabled = false;
+          generateBtn.innerHTML = originalContent;
+        }
+      }
+      /**
+       * Validate All Responses
+       */
+      async function validateAllResponses() {
+        if (
+          !currentSurvey ||
+          !currentSurvey.responses ||
+          currentSurvey.responses.length === 0
+        ) {
+          showError("No responses available to validate");
+          return;
+        }
+
+        const validateBtn = document.getElementById("validateResponsesBtn");
+        if (!validateBtn) {
+          showError("Validate responses button not found");
+          return;
+        }
+
+        const originalContent = validateBtn.innerHTML;
+
+        try {
+          // Show loading state
+          validateBtn.disabled = true;
+          validateBtn.innerHTML =
+            '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Validating...';
+
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/responses/validate`,
+            {
+              method: "GET",
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to validate responses"
+            );
+          }
+
+          const data = await response.json();
+
+          // Display validation results
+          displayValidationResults(data.validationResults || []);
+
+          showSuccess("Response validation completed!");
+        } catch (error) {
+          console.error("Error validating responses:", error);
+          showError("Failed to validate responses: " + error.message);
+        } finally {
+          // Restore button          validateBtn.disabled = false;
+          validateBtn.innerHTML = originalContent;
+        }
+      }
+
+      /**
+       * Toggle Summary Visibility
+       */
+      async function toggleSummaryVisibility() {
+        if (!currentSurvey || !currentSurvey.summary) {
+          showError("No summary available to toggle visibility");
+          return;
+        }
+
+        const toggleBtn = document.getElementById("toggleSummaryVisibilityBtn");
+        if (!toggleBtn) {
+          showError("Toggle button not found");
+          return;
+        }
+
+        const originalContent = toggleBtn.innerHTML;
+        const currentVisibility = currentSurvey.summary.isVisible;
+        const newVisibility = !currentVisibility;
+
+        try {
+          // Show loading state
+          toggleBtn.disabled = true;
+          toggleBtn.innerHTML =
+            '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Updating...';
+
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/summary/visibility`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({ isVisible: newVisibility }),
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to update visibility"
+            );
+          }
+
+          // Update current survey object
+          currentSurvey.summary.isVisible = newVisibility;
+
+          // Update button text
+          const toggleText = document.getElementById("toggleSummaryText");
+          if (toggleText) {
+            toggleText.textContent = newVisibility
+              ? "Make Summary Private"
+              : "Make Summary Public";
+          }
+
+          // Update summary display
+          displayExistingSummary(currentSurvey.summary);
+
+          showSuccess(`Summary is now ${newVisibility ? "public" : "private"}`);
+        } catch (error) {
+          console.error("Error toggling visibility:", error);
+          showError("Failed to update visibility: " + error.message);
+        } finally {
+          // Restore button
+          toggleBtn.disabled = false;
+          toggleBtn.innerHTML = originalContent;
+        }
+      }
+      /**
+       * Display existing summary
+       */
+      function displayExistingSummary(summary) {
+        const summarySection = document.getElementById("summaryDisplaySection");
+        const summaryContent = document.getElementById("summaryContent");
+        const summaryMeta = document.getElementById("summaryMeta");
+
+        if (!summarySection || !summaryContent || !summaryMeta) {
+          console.warn("Summary display elements not found in DOM");
+          return;
+        }
+
+        summaryContent.textContent = summary.content;
+        summaryMeta.innerHTML = `
+          Generated: ${formatDate(summary.generatedAt)} | 
+          Visibility: ${
+            summary.isVisible
+              ? '<span class="text-green-600 font-medium">Public (visible to participants)</span>'
+              : '<span class="text-gray-600 font-medium">Private (creator only)</span>'
+          }
+        `;
+
+        summarySection.classList.remove("hidden");
+      }
+      /**
+       * Hide summary display
+       */
+      function hideSummary() {
+        const summarySection = document.getElementById("summaryDisplaySection");
+        if (summarySection) {
+          summarySection.classList.add("hidden");
+        }
+      }
+      /**
+       * Display validation results
+       */
+      function displayValidationResults(validationResults) {
+        const validationSection = document.getElementById(
+          "validationResultsSection"
+        );
+        const validationContent = document.getElementById("validationContent");
+
+        if (!validationSection || !validationContent) {
+          console.warn("Validation display elements not found in DOM");
+          return;
+        }
+
+        if (validationResults.length === 0) {
+          validationContent.innerHTML = `
+            <div class="bg-green-100 border border-green-300 rounded-lg p-4 text-green-800">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="font-medium">All responses are valid!</span>
+              </div>
+              <p class="mt-1 text-sm">All ${currentSurvey.responses.length} responses comply with the survey guidelines.</p>
+            </div>
+          `;
+        } else {
+          validationContent.innerHTML = `
+            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4 text-yellow-800 mb-4">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <span class="font-medium">${
+                  validationResults.length
+                } response(s) found with issues</span>
+              </div>
+              <p class="mt-1 text-sm">Out of ${
+                currentSurvey.responses.length
+              } total responses, ${
+            validationResults.length
+          } do not comply with survey guidelines.</p>
+            </div>
+            <div class="space-y-3">
+              ${validationResults
+                .map(
+                  (result) => `
+                <div class="bg-white border border-red-300 rounded-lg p-4">
+                  <div class="flex justify-between items-start mb-2">
+                    <div class="font-medium text-gray-900">
+                      ${escapeHtml(result.username || "Anonymous User")}
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      Response ID: ${result.responseId}
+                    </div>
+                  </div>
+                  <div class="text-sm text-red-700 bg-red-50 rounded p-3">
+                    <strong>Issue:</strong> ${escapeHtml(result.reason)}
+                  </div>
+                  <div class="mt-2 text-sm text-gray-600">
+                    <strong>Response content:</strong><br>
+                    <div class="mt-1 p-2 bg-gray-50 rounded">
+                      ${escapeHtml(getResponseContent(result.responseId))}
+                    </div>
+                  </div>
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          `;
+        }
+
+        validationSection.classList.remove("hidden");
+      }
+
+      /**
+       * Get response content by ID
+       */
+      function getResponseContent(responseId) {
+        const response = currentSurvey.responses.find(
+          (r) => r._id === responseId
+        );
+        return response ? response.content : "Response not found";
+      }
+
+      /**
+       * Hide validation results
+       */
+      function hideValidationResults() {
+        const validationSection = document.getElementById(
+          "validationResultsSection"
+        );
+        validationSection.classList.add("hidden");
       }
 
       /**
