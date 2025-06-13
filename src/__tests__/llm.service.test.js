@@ -2,7 +2,6 @@
 jest.mock('../services/llm.service');
 
 const { LLMService } = require('../services/llm.service');
-const { connect, closeDatabase, clearDatabase } = require('./helpers/test.helper');
 
 describe('LLM Service', () => {
   let llmService;
@@ -59,18 +58,6 @@ describe('LLM Service', () => {
       summary: 'Mock summary of responses',
       keyInsights: ['Insight 1', 'Insight 2']
     });
-  });
-
-  beforeAll(async () => {
-    await connect();
-  });
-
-  afterEach(async () => {
-    await clearDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
   });
 
   describe('search', () => {

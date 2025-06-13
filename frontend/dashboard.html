@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Survey Dashboard</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Simple Navigation Bar -->
+    <nav
+      class="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50"
+    >
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+          <h1 class="text-xl font-bold text-gray-800">Survey Server</h1>
+
+          <div class="flex items-center space-x-4">
+            <span class="text-gray-600" id="username">Loading...</span>
+            <button
+              id="logoutButton"
+              class="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+      <!-- Alert Messages -->
+      <div
+        id="success-message"
+        class="hidden mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded"
+      ></div>
+      <div
+        id="error-message"
+        class="hidden mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+      ></div>
+
+      <!-- Create Survey Button -->
+      <div class="mb-6">
+        <button
+          onclick="window.location.href='create-survey.html'"
+          class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Create New Survey
+        </button>
+      </div>
+      <!-- Natural Language Search -->
+      <div class="mb-8 bg-white p-6 rounded-lg shadow">
+        <h3 class="text-lg font-semibold mb-4">Search Surveys</h3>
+        <div class="flex gap-3">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search surveys with natural language (e.g., 'surveys about food')"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            id="searchButton"
+            onclick="searchSurveys()"
+            class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
+          >
+            <span id="searchButtonText">Search</span>
+            <div id="searchSpinner" class="hidden ml-2">
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+              ></div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Search Results -->
+        <div id="searchResults" class="hidden mt-4">
+          <h4 class="font-medium mb-2">Search Results:</h4>
+          <div id="searchResultsContainer"></div>
+        </div>
+      </div>
+
+      <!-- Survey List -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+          <h3 class="text-lg font-semibold">Available Surveys</h3>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden p-8 text-center">
+          <div
+            class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+          ></div>
+          <p class="mt-2 text-gray-600">Loading surveys...</p>
+        </div>
+
+        <!-- Surveys Container -->
+        <div id="surveysContainer" class="p-6">
+          <!-- Surveys will be populated here -->
+        </div>
+
+        <!-- No Surveys Message -->
+        <div id="no-surveys" class="hidden p-8 text-center text-gray-500">
+          <p>No surveys available. Create the first one!</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>
+      // Simple dashboard functionality
+      document.addEventListener("DOMContentLoaded", function () {
+        // Check if user is logged in
+        if (!isLoggedIn()) {
+          redirectToLogin();
+          return;
+        }
+
+        // Update user info
+        updateUserInfo();
+
+        // Load surveys
+        loadSurveys();
+
+        // Setup search input
+        setupSearchInput();
+      });
+
+      function updateUserInfo() {
+        const user = getUserInfo();
+        const usernameElement = document.getElementById("username");
+        if (user && usernameElement) {
+          usernameElement.textContent = user.username || "User";
+        }
+      }
+
+      async function loadSurveys() {
+        const loadingElement = document.getElementById("loading");
+        const surveysContainer = document.getElementById("surveysContainer");
+        const noSurveysElement = document.getElementById("no-surveys");
+
+        try {
+          if (loadingElement) loadingElement.style.display = "block";
+          if (surveysContainer) surveysContainer.innerHTML = "";
+          if (noSurveysElement) noSurveysElement.style.display = "none";
+
+          const response = await authenticatedFetch(`${API_BASE_URL}/surveys`);
+
+          if (!response.ok) {
+            throw new Error(`Failed to load surveys: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const surveys = data.surveys || [];
+
+          if (surveys.length === 0) {
+            if (noSurveysElement) noSurveysElement.style.display = "block";
+          } else {
+            displaySurveys(surveys);
+          }
+        } catch (error) {
+          console.error("Error loading surveys:", error);
+          showError("Failed to load surveys. Please try again.");
+        } finally {
+          if (loadingElement) loadingElement.style.display = "none";
+        }
+      }
+
+      function displaySurveys(surveys) {
+        const surveysContainer = document.getElementById("surveysContainer");
+        if (!surveysContainer) return;
+
+        surveysContainer.innerHTML = surveys
+          .map((survey) => createSurveyCard(survey))
+          .join("");
+      }
+      function createSurveyCard(survey) {
+        const isExpired = new Date(survey.expiryDate) < new Date();
+        const isActive = survey.isActive && !isExpired;
+        const responseCount = survey.responseCount || 0;
+
+        return `
+          <div class="border border-gray-200 rounded-lg p-4 mb-4 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start mb-2">
+              <h4 class="text-lg font-semibold text-gray-900">${escapeHtml(
+                survey.title
+              )}</h4>
+              <span class="px-2 py-1 text-xs rounded-full ${
+                isActive
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }">
+                ${isActive ? "Active" : "Expired"}
+              </span>
+            </div>
+            
+            ${
+              survey.area
+                ? `<p class="text-sm text-gray-600 mb-2"><strong>Area:</strong> ${escapeHtml(
+                    survey.area
+                  )}</p>`
+                : ""
+            }
+            
+            <div class="flex justify-between items-center text-sm text-gray-500 mb-3">
+              <span>${responseCount} responses</span>
+              <span>Expires: ${formatDate(survey.expiryDate)}</span>
+            </div>
+            
+            <a 
+              href="survey.html?id=${survey._id}" 
+              class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+            >
+              View Survey
+            </a>
+          </div>
+        `;
+      }
+      async function searchSurveys() {
+        const searchInput = document.getElementById("searchInput");
+        const searchButton = document.getElementById("searchButton");
+        const searchButtonText = document.getElementById("searchButtonText");
+        const searchSpinner = document.getElementById("searchSpinner");
+        const query = searchInput?.value?.trim();
+        const searchResults = document.getElementById("searchResults");
+        const searchResultsContainer = document.getElementById(
+          "searchResultsContainer"
+        );
+
+        if (!query) {
+          showError("Please enter a search query");
+          return;
+        }
+
+        // Show loading state
+        if (searchButton) {
+          searchButton.disabled = true;
+          searchButton.classList.add("disabled:bg-gray-400");
+        }
+        if (searchButtonText) searchButtonText.textContent = "Searching...";
+        if (searchSpinner) searchSpinner.classList.remove("hidden");
+        if (searchInput) searchInput.disabled = true;
+
+        // Hide previous results
+        if (searchResults) searchResults.style.display = "none";
+
+        try {
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/search`,
+            {
+              method: "POST",
+              body: JSON.stringify({ query }),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`Search failed: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const matches = data.matches || [];
+
+          if (matches.length === 0) {
+            showError("No surveys found matching your search");
+            return;
+          }
+
+          // Display search results
+          if (searchResults) searchResults.style.display = "block";
+          if (searchResultsContainer) {
+            searchResultsContainer.innerHTML = matches
+              .map(
+                (match) => `
+              <div class="border border-gray-200 rounded p-3 mb-2 hover:bg-gray-50 transition-colors">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <h5 class="font-medium text-gray-900">${escapeHtml(
+                      match.survey?.title || "Unknown Survey"
+                    )}</h5>
+                    <p class="text-sm text-gray-600 mt-1">${escapeHtml(
+                      match.reason || "No reason provided"
+                    )}</p>
+                    ${
+                      match.survey?.area
+                        ? `<span class="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${escapeHtml(
+                            match.survey.area
+                          )}</span>`
+                        : ""
+                    }
+                  </div>
+                  <a 
+                    href="survey.html?id=${match.survey?._id}" 
+                    class="ml-4 bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700 transition-colors"
+                  >
+                    View
+                  </a>
+                </div>
+              </div>
+            `
+              )
+              .join("");
+          }
+
+          showSuccess(`Found ${matches.length} matching survey(s)`);
+        } catch (error) {
+          console.error("Error searching surveys:", error);
+          showError("Search failed. Please try again.");
+        } finally {
+          // Reset loading state
+          if (searchButton) {
+            searchButton.disabled = false;
+            searchButton.classList.remove("disabled:bg-gray-400");
+          }
+          if (searchButtonText) searchButtonText.textContent = "Search";
+          if (searchSpinner) searchSpinner.classList.add("hidden");
+          if (searchInput) searchInput.disabled = false;
+        }
+      }
+      function setupSearchInput() {
+        const searchInput = document.getElementById("searchInput");
+        const searchButton = document.getElementById("searchButton");
+
+        if (searchInput) {
+          searchInput.addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              // Only search if button is not disabled
+              if (searchButton && !searchButton.disabled) {
+                searchSurveys();
+              }
+            }
+          });
+
+          // Clear results when input is cleared
+          searchInput.addEventListener("input", function (event) {
+            if (!event.target.value.trim()) {
+              const searchResults = document.getElementById("searchResults");
+              if (searchResults) {
+                searchResults.style.display = "none";
+              }
+            }
+          });
+        }
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return (
+          date.toLocaleDateString() +
+          " " +
+          date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        );
+      }
+
+      function escapeHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    </script>
+  </body>
+</html>

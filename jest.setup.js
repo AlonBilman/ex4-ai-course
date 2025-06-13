@@ -1,5 +1,7 @@
 // Silence logging during tests and ensure required environment variables.
 const { logger } = require("./src/config/logger");
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
 logger.silent = true;
 
@@ -12,4 +14,29 @@ process.env.REGISTRATION_SECRET = process.env.REGISTRATION_SECRET || "test-regis
 jest.mock('./src/services/llm.service', () => {
   const MockLLMService = require('./src/__mocks__/llm.service');
   return MockLLMService;
+});
+
+let mongoServer;
+
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  const mongoUri = mongoServer.getUri();
+  process.env.MONGO_URI = mongoUri;
+  await mongoose.connect(mongoUri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+});
+
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
+
+beforeEach(async () => {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    const collection = collections[key];
+    await collection.deleteMany({});
+  }
 });

@@ -1,53 +1,9 @@
 const request = require("supertest");
-const {
-  connect,
-  closeDatabase,
-  clearDatabase,
-  setupTestEnv,
-} = require("../helpers/test.helper");
+const app = require("../../app");
 const User = require("../../models/user.model");
-const bcrypt = require("bcryptjs");
-const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
-const express = require("express");
-const authRoutes = require("../../routes/auth.routes");
+const { createTestUser } = require("../helpers/test.helper");
 
 describe("Auth Controller", () => {
-  let mongoServer;
-  let app;
-
-  beforeAll(async () => {
-    // Set required environment variables for testing
-    process.env.JWT_SECRET = "test-secret-key";
-    process.env.NODE_ENV = "test";
-    process.env.USE_MOCK_LLM = "true";
-    process.env.REGISTRATION_SECRET = "test-secret";
-
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-    
-    app = express();
-    app.use(express.json());
-    app.use('/auth', authRoutes);
-
-    await connect();
-  });
-
-  afterEach(async () => {
-    await clearDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
-
-  beforeEach(async () => {
-    await User.deleteMany({});
-  });
-
   describe("POST /auth/register", () => {
     it("should register a new user with valid data", async () => {
       const userData = {
@@ -71,12 +27,7 @@ describe("Auth Controller", () => {
         registrationCode: process.env.REGISTRATION_SECRET
       };
 
-      const existingUser = new User({
-        username: userData.username,
-        email: userData.email,
-        passwordHash: userData.password
-      });
-      await existingUser.save();
+      await createTestUser({ email: userData.email });
 
       const response = await request(app).post("/auth/register").send(userData);
 
@@ -128,16 +79,9 @@ describe("Auth Controller", () => {
   });
 
   describe("POST /auth/login", () => {
-    beforeEach(async () => {
-      const user = new User({
-        username: "testuser",
-        email: "test@example.com",
-        passwordHash: "password123"
-      });
-      await user.save();
-    });
-
     it("should login with valid credentials", async () => {
+      await createTestUser({ email: "test@example.com", password: "password123" });
+
       const response = await request(app).post("/auth/login").send({
         email: "test@example.com",
         password: "password123"

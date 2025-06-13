@@ -3,7 +3,7 @@ const Survey = require('../models/survey.model');
 // Submit a response to a survey
 exports.submitResponse = async (req, res) => {
   try {
-    const { surveyId } = req.params;
+    const { id: surveyId } = req.params;
     const { content } = req.body;
     const userId = req.user.id;
 
@@ -17,14 +17,29 @@ exports.submitResponse = async (req, res) => {
       return res.status(404).json({ error: { message: 'Survey not found' } });
     }
 
+    // Check if survey is inactive
+    if (!survey.isActive) {
+      return res.status(400).json({ error: { message: 'Survey is not active' } });
+    }
+
     // Check expiry
     if (survey.expiryDate && survey.expiryDate < new Date()) {
       return res.status(400).json({ error: { message: 'Survey has expired' } });
     }
 
+    // Check if survey has reached max responses
+    if (survey.maxResponses && survey.responses.length >= survey.maxResponses) {
+      return res.status(400).json({ error: { message: 'Survey is not accepting new responses at this time.' } });
+    }
+
     // Check if user already responded
     if (survey.hasUserResponded(userId)) {
-      return res.status(400).json({ error: { message: 'User has already responded' } });
+      return res.status(400).json({ 
+        error: { 
+          code: 'RESPONSE_ALREADY_EXISTS',
+          message: 'You have already submitted a response to this survey' 
+        } 
+      });
     }
 
     // Add response to survey
@@ -49,7 +64,7 @@ exports.submitResponse = async (req, res) => {
 // Get responses for a survey (survey creator only)
 exports.getSurveyResponses = async (req, res) => {
   try {
-    const { surveyId } = req.params;
+    const { id: surveyId } = req.params;
     const userId = req.user.id;
 
     const survey = await Survey.findById(surveyId).populate('responses.user', 'username email');
@@ -71,7 +86,7 @@ exports.getSurveyResponses = async (req, res) => {
 // Get a specific response
 exports.getResponse = async (req, res) => {
   try {
-    const { surveyId, responseId } = req.params;
+    const { id: surveyId, responseId } = req.params;
     const userId = req.user.id;
 
     const survey = await Survey.findById(surveyId).populate('responses.user', 'username email');
@@ -98,7 +113,7 @@ exports.getResponse = async (req, res) => {
 // Update a response (only allowed for the response creator)
 exports.updateResponse = async (req, res) => {
   try {
-    const { surveyId, responseId } = req.params;
+    const { id: surveyId, responseId } = req.params;
     const { content } = req.body;
     const userId = req.user.id;
 
@@ -114,7 +129,7 @@ exports.updateResponse = async (req, res) => {
 
     // Check if user is the response owner
     if (response.user.toString() !== userId) {
-      return res.status(403).json({ error: { message: 'Access denied' } });
+      return res.status(403).json({ error: { message: 'You can only update your own responses' } });
     }
 
     // Check if survey is still open
@@ -136,7 +151,7 @@ exports.updateResponse = async (req, res) => {
 // Delete a response (only allowed for the response creator or survey creator)
 exports.deleteResponse = async (req, res) => {
   try {
-    const { surveyId, responseId } = req.params;
+    const { id: surveyId, responseId } = req.params;
     const userId = req.user.id;
 
     const survey = await Survey.findById(surveyId);

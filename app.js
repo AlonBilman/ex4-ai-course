@@ -5,9 +5,9 @@ const winston = require('winston');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
-const authRoutes = require('./routes/authRoutes');
-const surveyRoutes = require('./routes/surveyRoutes');
-const errorHandler = require('./middleware/errorHandler');
+const authRoutes = require('./src/routes/auth.routes.js');
+const surveyRoutes = require('./src/routes/survey.routes.js');
+const errorHandler = require('./src/middleware/errorHandler.js');
 
 require('dotenv').config();
 const app = express();
@@ -24,9 +24,11 @@ app.use('/surveys', surveyRoutes);
 // Error handler
 app.use(errorHandler);
 
-// DB connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('Mongo error', err));
+// Database connection
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('MongoDB connected...'))
+    .catch(err => console.error('Could not connect to MongoDB...', err));
+}
 
 module.exports = app;

@@ -4,7 +4,8 @@ const questionSchema = new mongoose.Schema({
   text: {
     type: String,
     required: [true, 'Question text is required'],
-    trim: true
+    trim: true,
+    maxLength: [500, 'Question text cannot exceed 500 characters']
   },
   type: {
     type: String,
@@ -124,6 +125,8 @@ const surveySchema = new mongoose.Schema({
   questions: [questionSchema],
   maxResponses: {
     type: Number,
+    default: 100,
+    min: [1, 'Maximum responses must be at least 1']
   },
 }, {
   timestamps: true
@@ -142,7 +145,8 @@ surveySchema.virtual('isExpired').get(function() {
 
 // Method to check if survey can accept more responses
 surveySchema.methods.canAcceptResponses = function() {
-  return this.isActive && !this.isExpired;
+  const isFull = this.maxResponses && this.responses.length >= this.maxResponses;
+  return this.isActive && !this.isExpired && !isFull;
 };
 
 // Method to check if user has already responded

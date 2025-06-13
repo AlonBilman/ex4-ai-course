@@ -1,10 +1,7 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const surveyService = require('../services/survey.service');
 const Survey = require('../models/survey.model');
 const User = require('../models/user.model');
-const { connect, closeDatabase, clearDatabase } = require('./helpers/test.helper');
+const { createTestUser } = require('./helpers/test.helper');
 
 jest.setTimeout(30000);
 
@@ -13,30 +10,10 @@ describe('Survey Service', () => {
   let user;
   let testSurvey;
 
-  beforeAll(async () => {
-    await connect();
-  });
-
   beforeEach(async () => {
-    await clearDatabase();
-
     // Create test users
-    const creatorPasswordHash = await bcrypt.hash('creator123', 10);
-    const userPasswordHash = await bcrypt.hash('user123', 10);
-
-    creator = await User.create({
-      username: 'creator',
-      email: 'creator@test.com',
-      passwordHash: creatorPasswordHash,
-      role: 'user'
-    });
-
-    user = await User.create({
-      username: 'user',
-      email: 'user@test.com',
-      passwordHash: userPasswordHash,
-      role: 'user'
-    });
+    creator = await createTestUser({ username: 'creator', email: 'creator@test.com' });
+    user = await createTestUser({ username: 'user', email: 'user@test.com' });
 
     // Create a test survey
     testSurvey = await Survey.create({
@@ -52,10 +29,6 @@ describe('Survey Service', () => {
       ],
       expiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
     });
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
   });
 
   describe('createSurvey', () => {

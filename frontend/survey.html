@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Survey Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav
+      class="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50"
+    >
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+          <h1 class="text-xl font-bold text-gray-800">Survey Server</h1>
+          <div class="flex items-center space-x-4">
+            <span id="username" class="text-gray-600"></span>
+            <button
+              onclick="window.location.href='dashboard.html'"
+              class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+      <!-- Alert Messages -->
+      <div id="success-message" class="hidden mb-6"></div>
+      <div id="error-message" class="hidden mb-6"></div>
+
+      <!-- Loading State -->
+      <div id="loading" class="hidden text-center py-8">
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+        ></div>
+        <p class="mt-2 text-gray-600">Loading survey...</p>
+      </div>
+
+      <!-- Survey Content -->
+      <div id="surveyContent" class="hidden">
+        <!-- Survey Details Card -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div class="border-b pb-4 mb-4">
+            <h1
+              id="surveyTitle"
+              class="text-2xl font-bold text-gray-900 mb-2"
+            ></h1>
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <span
+                >Area: <span id="surveyArea" class="font-medium"></span
+              ></span>
+              <span
+                >Expires: <span id="surveyExpiry" class="font-medium"></span
+              ></span>
+              <span
+                >Status: <span id="surveyStatus" class="font-medium"></span
+              ></span>
+              <span
+                >Responses: <span id="responseCount" class="font-medium"></span
+              ></span>
+            </div>
+          </div>
+
+          <!-- Survey Question -->
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">
+              Survey Question
+            </h3>
+            <div
+              id="surveyQuestion"
+              class="bg-gray-50 p-4 rounded-lg text-gray-800"
+            ></div>
+          </div>
+
+          <!-- Permitted Domains -->
+          <div id="permittedDomainsSection" class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">
+              Permitted Domains
+            </h3>
+            <div id="permittedDomains" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Response Guidelines -->
+          <div id="responseGuidelinesSection" class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">
+              Response Guidelines
+            </h3>
+            <div
+              id="responseGuidelines"
+              class="bg-blue-50 p-4 rounded-lg text-blue-900"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Response Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Your Response
+          </h3>
+
+          <!-- Existing Response Display -->
+          <div id="existingResponseSection" class="hidden mb-6">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div class="flex justify-between items-start mb-3">
+                <h4 class="font-medium text-green-800">
+                  Your Submitted Response
+                </h4>
+                <span id="responseDate" class="text-sm text-green-600"></span>
+              </div>
+              <div
+                id="existingResponseContent"
+                class="text-green-700 mb-4"
+              ></div>
+              <div id="responseActions" class="flex gap-2">
+                <button
+                  id="editResponseBtn"
+                  onclick="startEditingResponse()"
+                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Edit Response
+                </button>
+                <button
+                  id="deleteResponseBtn"
+                  onclick="deleteUserResponse()"
+                  class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+                >
+                  Delete Response
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Response Form -->
+          <div id="responseFormSection" class="hidden">
+            <form id="responseForm" class="space-y-4">
+              <div>
+                <label
+                  for="responseContent"
+                  class="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  <span id="formLabel">Submit Your Response</span>
+                </label>
+                <textarea
+                  id="responseContent"
+                  rows="6"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+                  placeholder="Enter your response here..."
+                  maxlength="2000"
+                ></textarea>
+                <div class="text-right text-xs text-gray-500 mt-1">
+                  <span id="charCount">0</span>/2000 characters
+                </div>
+              </div>
+
+              <div class="flex gap-3">
+                <button
+                  type="submit"
+                  id="submitBtn"
+                  class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  <span id="submitBtnText">Submit Response</span>
+                </button>
+                <button
+                  type="button"
+                  id="cancelBtn"
+                  onclick="cancelEditing()"
+                  class="hidden bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Survey Closed Message -->
+          <div id="surveyClosedSection" class="hidden">
+            <div
+              class="bg-gray-100 border border-gray-300 rounded-lg p-4 text-center"
+            >
+              <div class="text-gray-600">
+                <svg
+                  class="w-12 h-12 mx-auto mb-3 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+                <h4 class="text-lg font-medium mb-2">Survey Closed</h4>
+                <p id="closedReason">
+                  This survey is no longer accepting responses.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Public Summary Section (for all users when summary is public) -->
+        <div
+          id="publicSummarySection"
+          class="hidden bg-white rounded-lg shadow-lg p-6 mt-6"
+        >
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            📋 Survey Summary
+          </h3>
+
+          <!-- Public Summary Display -->
+          <div
+            id="publicSummaryDisplay"
+            class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+          >
+            <div class="flex justify-between items-start mb-3">
+              <h4
+                class="text-md font-medium text-blue-900 flex items-center gap-2"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                AI-Generated Summary
+              </h4>
+            </div>
+            <div
+              id="publicSummaryContent"
+              class="bg-white p-4 rounded border text-gray-700 whitespace-pre-wrap"
+            ></div>
+            <div
+              id="publicSummaryMeta"
+              class="mt-3 text-sm text-blue-700"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Creator Response Management Section -->
+        <div
+          id="creatorModerationSection"
+          class="hidden bg-white rounded-lg shadow-lg p-6 mt-6"
+        >
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Response Moderation (Creator Only)
+          </h3>
+
+          <!-- AI Tools Section -->
+          <div
+            id="aiToolsSection"
+            class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4"
+          >
+            <h4 class="text-md font-medium text-blue-900 mb-3">🤖 AI Tools</h4>
+            <div class="flex flex-wrap gap-3">
+              <!-- Generate Summary Button -->
+              <button
+                id="generateSummaryBtn"
+                onclick="generateAISummary()"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2"
+                title="Generate AI summary of all responses"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                Generate Summary
+              </button>
+
+              <!-- Validate Responses Button -->
+              <button
+                id="validateResponsesBtn"
+                onclick="validateAllResponses()"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2"
+                title="Validate all responses against survey guidelines"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                Validate Responses
+              </button>
+
+              <!-- Toggle Summary Visibility Button -->
+              <button
+                id="toggleSummaryVisibilityBtn"
+                onclick="toggleSummaryVisibility()"
+                class="hidden bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-2"
+                title="Toggle summary visibility for participants"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  ></path>
+                </svg>
+                <span id="toggleSummaryText">Make Summary Public</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- AI Summary Display -->
+          <div
+            id="summaryDisplaySection"
+            class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4"
+          >
+            <div class="flex justify-between items-start mb-3">
+              <h4
+                class="text-md font-medium text-amber-900 flex items-center gap-2"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                AI Summary
+              </h4>
+              <button
+                onclick="hideSummary()"
+                class="text-amber-700 hover:text-amber-900 text-sm"
+                title="Hide summary"
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              id="summaryContent"
+              class="bg-white p-4 rounded border text-gray-700 whitespace-pre-wrap"
+            ></div>
+            <div id="summaryMeta" class="mt-3 text-sm text-amber-700"></div>
+          </div>
+
+          <!-- Validation Results Display -->
+          <div
+            id="validationResultsSection"
+            class="hidden mb-6 bg-red-50 border border-red-200 rounded-lg p-4"
+          >
+            <div class="flex justify-between items-start mb-3">
+              <h4
+                class="text-md font-medium text-red-900 flex items-center gap-2"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  ></path>
+                </svg>
+                Validation Results
+              </h4>
+              <button
+                onclick="hideValidationResults()"
+                class="text-red-700 hover:text-red-900 text-sm"
+                title="Hide validation results"
+              >
+                ✕
+              </button>
+            </div>
+            <div id="validationContent" class="space-y-3"></div>
+          </div>
+
+          <!-- All Responses List -->
+          <div id="allResponsesList" class="space-y-4">
+            <!-- Dynamic content will be inserted here -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="noResponsesMessage" class="hidden text-center py-8">
+            <div class="text-gray-400">
+              <svg
+                class="w-12 h-12 mx-auto mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 8h10m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2m0 0v10a2 2 0 002 2h10a2 2 0 002-2V8m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2"
+                ></path>
+              </svg>
+              <h4 class="text-lg font-medium mb-2">No Responses Yet</h4>
+              <p>No one has responded to this survey yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Scripts -->
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>
+      // Global variables
+      let currentSurvey = null;
+      let userResponse = null;
+      let isEditMode = false;
+
+      // Initialize survey page function for auth.js
+      function initializeSurveyPage() {
+        // Check authentication
+        if (!isLoggedIn()) {
+          redirectToLogin();
+          return;
+        }
+
+        // Update user info in navbar
+        updateUserInfo();
+
+        // Get survey ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const surveyId = urlParams.get("id");
+
+        if (!surveyId) {
+          showError("No survey ID provided");
+          return;
+        }
+
+        // Load survey data
+        loadSurvey(surveyId);
+
+        // Setup form handlers
+        setupFormHandlers();
+      }
+
+      /**
+       * Update user info in the navbar
+       */
+      function updateUserInfo() {
+        const user = getUserInfo();
+        const usernameElement = document.getElementById("username");
+        if (user && usernameElement) {
+          usernameElement.textContent = user.username || "User";
+        }
+      }
+
+      /**
+       * Load survey data from API
+       */
+      async function loadSurvey(surveyId) {
+        try {
+          showLoading(true);
+
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${surveyId}`
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to load survey"
+            );
+          }
+
+          const data = await response.json();
+          currentSurvey = data.survey;
+
+          // Find user's response if exists
+          const user = getUserInfo();
+          userResponse = currentSurvey.responses?.find(
+            (r) => (r.user._id || r.user) === user.userId
+          );
+
+          displaySurvey();
+        } catch (error) {
+          console.error("Error loading survey:", error);
+          showError("Failed to load survey: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      /**
+       * Display survey data in the UI
+       */
+      function displaySurvey() {
+        // Show survey content
+        document.getElementById("surveyContent").classList.remove("hidden");
+
+        // Display basic survey info
+        document.getElementById("surveyTitle").textContent =
+          currentSurvey.title || "Untitled Survey";
+        document.getElementById("surveyArea").textContent =
+          currentSurvey.area || "General";
+        document.getElementById("surveyExpiry").textContent = formatDate(
+          currentSurvey.expiryDate
+        );
+        document.getElementById("responseCount").textContent =
+          currentSurvey.responseCount || currentSurvey.responses?.length || 0;
+
+        // Display survey question
+        const question =
+          currentSurvey.guidelines?.question ||
+          currentSurvey.question ||
+          "No question provided";
+        document.getElementById("surveyQuestion").textContent = question;
+
+        // Display permitted domains
+        const domains = currentSurvey.guidelines?.permittedDomains || [];
+        const domainsContainer = document.getElementById("permittedDomains");
+        if (domains.length > 0) {
+          domainsContainer.innerHTML = domains
+            .map(
+              (domain) =>
+                `<span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">${escapeHtml(
+                  domain
+                )}</span>`
+            )
+            .join("");
+        } else {
+          document
+            .getElementById("permittedDomainsSection")
+            .classList.add("hidden");
+        }
+
+        // Display response guidelines
+        const guidelines = currentSurvey.guidelines?.permittedResponses;
+        if (guidelines) {
+          document.getElementById("responseGuidelines").textContent =
+            guidelines;
+        } else {
+          document
+            .getElementById("responseGuidelinesSection")
+            .classList.add("hidden");
+        }
+
+        // Determine survey status and response capability
+        const now = new Date();
+        const expiryDate = new Date(currentSurvey.expiryDate);
+        const isExpired = now > expiryDate;
+        const isActive = currentSurvey.isActive !== false;
+        const canRespond = isActive && !isExpired;
+
+        // Update status display
+        const statusElement = document.getElementById("surveyStatus");
+        if (canRespond) {
+          statusElement.textContent = "Active";
+          statusElement.className = "font-medium text-green-600";
+        } else if (!isActive) {
+          statusElement.textContent = "Closed by Creator";
+          statusElement.className = "font-medium text-red-600";
+        } else {
+          statusElement.textContent = "Expired";
+          statusElement.className = "font-medium text-gray-600";
+        } // Display appropriate response section
+        displayResponseSection(canRespond);
+
+        // Display public summary if available and visible
+        displayPublicSummary();
+
+        // Display creator moderation section if user is creator
+        displayCreatorModerationSection();
+      }
+
+      /**
+       * Display the appropriate response section based on survey state
+       */
+      function displayResponseSection(canRespond) {
+        const existingSection = document.getElementById(
+          "existingResponseSection"
+        );
+        const formSection = document.getElementById("responseFormSection");
+        const closedSection = document.getElementById("surveyClosedSection");
+
+        // Hide all sections initially
+        existingSection.classList.add("hidden");
+        formSection.classList.add("hidden");
+        closedSection.classList.add("hidden");
+
+        if (userResponse) {
+          // User has already responded
+          displayExistingResponse();
+          if (canRespond) {
+            // Show edit/delete options if survey is still open
+            document
+              .getElementById("responseActions")
+              .classList.remove("hidden");
+          } else {
+            // Hide edit/delete options if survey is closed
+            document.getElementById("responseActions").classList.add("hidden");
+          }
+        } else if (canRespond) {
+          // User hasn't responded and survey is open
+          showResponseForm(false);
+        } else {
+          // Survey is closed and user hasn't responded
+          showClosedMessage();
+        }
+      }
+
+      /**
+       * Display existing response
+       */
+      function displayExistingResponse() {
+        const existingSection = document.getElementById(
+          "existingResponseSection"
+        );
+        document.getElementById("existingResponseContent").textContent =
+          userResponse.content;
+        document.getElementById("responseDate").textContent =
+          "Submitted on " + formatDate(userResponse.createdAt);
+        existingSection.classList.remove("hidden");
+      }
+
+      /**
+       * Show response form
+       */
+      function showResponseForm(isEdit = false) {
+        const formSection = document.getElementById("responseFormSection");
+        const formLabel = document.getElementById("formLabel");
+        const submitBtnText = document.getElementById("submitBtnText");
+        const cancelBtn = document.getElementById("cancelBtn");
+
+        formLabel.textContent = isEdit
+          ? "Edit Your Response"
+          : "Submit Your Response";
+        submitBtnText.textContent = isEdit
+          ? "Update Response"
+          : "Submit Response";
+
+        if (isEdit) {
+          document.getElementById("responseContent").value =
+            userResponse.content;
+          updateCharCount();
+          cancelBtn.classList.remove("hidden");
+          isEditMode = true;
+        } else {
+          document.getElementById("responseContent").value = "";
+          updateCharCount();
+          cancelBtn.classList.add("hidden");
+          isEditMode = false;
+        }
+
+        formSection.classList.remove("hidden");
+      }
+
+      /**
+       * Show closed survey message
+       */
+      function showClosedMessage() {
+        const closedSection = document.getElementById("surveyClosedSection");
+        const closedReason = document.getElementById("closedReason");
+
+        const now = new Date();
+        const expiryDate = new Date(currentSurvey.expiryDate);
+        const isExpired = now > expiryDate;
+
+        if (!currentSurvey.isActive) {
+          closedReason.textContent =
+            "This survey has been closed by the creator.";
+        } else if (isExpired) {
+          closedReason.textContent =
+            "This survey has expired and is no longer accepting responses.";
+        }
+
+        closedSection.classList.remove("hidden");
+      }
+
+      /**
+       * Setup form event handlers
+       */
+      function setupFormHandlers() {
+        // Character counter
+        const textarea = document.getElementById("responseContent");
+        textarea.addEventListener("input", updateCharCount);
+
+        // Form submission
+        const form = document.getElementById("responseForm");
+        form.addEventListener("submit", handleFormSubmit);
+      }
+
+      /**
+       * Update character count
+       */
+      function updateCharCount() {
+        const textarea = document.getElementById("responseContent");
+        const charCount = document.getElementById("charCount");
+        const currentLength = textarea.value.length;
+        charCount.textContent = currentLength;
+
+        if (currentLength > 1900) {
+          charCount.parentElement.className =
+            "text-right text-xs text-red-500 mt-1";
+        } else {
+          charCount.parentElement.className =
+            "text-right text-xs text-gray-500 mt-1";
+        }
+      }
+
+      /**
+       * Handle form submission
+       */
+      async function handleFormSubmit(event) {
+        event.preventDefault();
+
+        const content = document.getElementById("responseContent").value.trim();
+
+        if (!content) {
+          showError("Please enter your response before submitting");
+          return;
+        }
+
+        if (content.length > 2000) {
+          showError("Response is too long (maximum 2000 characters)");
+          return;
+        }
+
+        try {
+          const submitBtn = document.getElementById("submitBtn");
+          const originalText = submitBtn.textContent;
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Submitting...";
+
+          if (isEditMode) {
+            await updateResponse(content);
+          } else {
+            await submitResponse(content);
+          }
+        } catch (error) {
+          console.error("Error with response:", error);
+          showError(error.message);
+        } finally {
+          const submitBtn = document.getElementById("submitBtn");
+          submitBtn.disabled = false;
+          submitBtn.textContent =
+            document.getElementById("submitBtnText").textContent;
+        }
+      }
+
+      /**
+       * Submit new response
+       */
+      async function submitResponse(content) {
+        const response = await authenticatedFetch(
+          `${API_BASE_URL}/surveys/${currentSurvey._id}/responses`,
+          {
+            method: "POST",
+            body: JSON.stringify({ content }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error?.message || "Failed to submit response"
+          );
+        }
+
+        const responseData = await response.json();
+        userResponse = responseData;
+
+        showSuccess("Response submitted successfully!");
+
+        // Refresh the display
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
+
+      /**
+       * Update existing response
+       */
+      async function updateResponse(content) {
+        const response = await authenticatedFetch(
+          `${API_BASE_URL}/surveys/${currentSurvey._id}/responses/${userResponse._id}`,
+          {
+            method: "PUT",
+            body: JSON.stringify({ content }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error?.message || "Failed to update response"
+          );
+        }
+
+        const responseData = await response.json();
+        userResponse = responseData;
+
+        showSuccess("Response updated successfully!");
+
+        // Refresh the display
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
+
+      /**
+       * Start editing existing response
+       */
+      function startEditingResponse() {
+        document
+          .getElementById("existingResponseSection")
+          .classList.add("hidden");
+        showResponseForm(true);
+      }
+
+      /**
+       * Cancel editing
+       */
+      function cancelEditing() {
+        document.getElementById("responseFormSection").classList.add("hidden");
+        if (userResponse) {
+          displayExistingResponse();
+        }
+        isEditMode = false;
+      }
+
+      /**
+       * Delete user's response
+       */
+      async function deleteUserResponse() {
+        if (
+          !confirm(
+            "Are you sure you want to delete your response? This action cannot be undone."
+          )
+        ) {
+          return;
+        }
+
+        try {
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/responses/${userResponse._id}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to delete response"
+            );
+          }
+
+          showSuccess("Response deleted successfully!");
+
+          // Refresh the page
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } catch (error) {
+          console.error("Error deleting response:", error);
+          showError("Failed to delete response: " + error.message);
+        }
+      }
+
+      /**
+       * Show/hide loading state
+       */
+      function showLoading(show) {
+        const loadingElement = document.getElementById("loading");
+        const contentElement = document.getElementById("surveyContent");
+
+        if (show) {
+          loadingElement.classList.remove("hidden");
+          contentElement.classList.add("hidden");
+        } else {
+          loadingElement.classList.add("hidden");
+          contentElement.classList.remove("hidden");
+        }
+      }
+
+      /**
+       * Format date for display
+       */
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      /**
+       * Display creator moderation section if user is the survey creator
+       */
+      function displayCreatorModerationSection() {
+        const user = getUserInfo();
+        const isCreator = currentSurvey.creator._id === user.userId;
+
+        if (!isCreator) {
+          return; // Hide section for non-creators
+        }
+
+        const moderationSection = document.getElementById(
+          "creatorModerationSection"
+        );
+        const allResponsesList = document.getElementById("allResponsesList");
+        const noResponsesMessage =
+          document.getElementById("noResponsesMessage");
+        moderationSection.classList.remove("hidden");
+
+        // Show all responses for creators (backend already provides all responses for creators)
+        const allResponses = currentSurvey.responses || [];
+
+        // Update AI tools section based on responses and existing summary
+        updateAIToolsSection(allResponses);
+
+        if (allResponses.length === 0) {
+          noResponsesMessage.classList.remove("hidden");
+          allResponsesList.innerHTML = "";
+          return;
+        }
+
+        noResponsesMessage.classList.add("hidden");
+
+        // Generate HTML for all responses
+        allResponsesList.innerHTML = allResponses
+          .map((response, index) => {
+            const username = response.user?.username || "Unknown User";
+            const isCurrentUser = response.user?._id === user.userId;
+
+            return `
+            <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h5 class="font-medium text-gray-900">
+                    ${escapeHtml(username)}
+                    ${
+                      isCurrentUser
+                        ? '<span class="text-blue-600 text-sm">(You)</span>'
+                        : ""
+                    }
+                  </h5>
+                  <span class="text-sm text-gray-500">Submitted on ${formatDate(
+                    response.createdAt
+                  )}</span>
+                </div>
+                <button
+                  onclick="deleteResponseAsCreator('${
+                    response._id
+                  }', '${escapeHtml(username)}')"
+                  class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                  title="Delete this response"
+                >
+                  Delete
+                </button>
+              </div>
+              <div class="text-gray-700 bg-white p-3 rounded border">
+                ${escapeHtml(response.content)}
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+      }
+
+      /**
+       * Display public summary for all users (when summary is public)
+       */ function displayPublicSummary() {
+        const user = getUserInfo();
+        if (!user || !currentSurvey) return;
+
+        const isCreator =
+          currentSurvey.creator && currentSurvey.creator._id === user.userId;
+        const publicSummarySection = document.getElementById(
+          "publicSummarySection"
+        );
+
+        if (!publicSummarySection) return;
+
+        // Only show public summary if:
+        // 1. Survey has a summary
+        // 2. Summary is marked as visible (public)
+        // 3. User is NOT the creator (creators see it in moderation section)
+        if (
+          currentSurvey.summary &&
+          currentSurvey.summary.content &&
+          currentSurvey.summary.isVisible &&
+          !isCreator
+        ) {
+          const summaryContent = document.getElementById(
+            "publicSummaryContent"
+          );
+          const summaryMeta = document.getElementById("publicSummaryMeta");
+
+          if (summaryContent && summaryMeta) {
+            summaryContent.textContent = currentSurvey.summary.content;
+            summaryMeta.innerHTML = `
+              Generated: ${formatDate(currentSurvey.summary.generatedAt)} | 
+              <span class="text-blue-600 font-medium">Public Summary</span>
+            `;
+
+            publicSummarySection.classList.remove("hidden");
+            console.log("Public summary displayed for non-creator user");
+          }
+        } else {
+          // Hide public summary section if conditions not met
+          publicSummarySection.classList.add("hidden");
+          console.log("Public summary hidden - conditions not met:", {
+            hasSummary: !!currentSurvey.summary,
+            hasContent: !!(
+              currentSurvey.summary && currentSurvey.summary.content
+            ),
+            isVisible: !!(
+              currentSurvey.summary && currentSurvey.summary.isVisible
+            ),
+            isCreator: isCreator,
+          });
+        }
+      }
+
+      /**
+       * Delete a response as the survey creator
+       */
+      async function deleteResponseAsCreator(responseId, username) {
+        if (
+          !confirm(
+            `Are you sure you want to delete ${username}'s response? This action cannot be undone.`
+          )
+        ) {
+          return;
+        }
+
+        try {
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/responses/${responseId}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to delete response"
+            );
+          }
+
+          showSuccess(`${username}'s response deleted successfully!`);
+
+          // Refresh the page to show updated responses
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } catch (error) {
+          console.error("Error deleting response:", error);
+          showError("Failed to delete response: " + error.message);
+        }
+      }
+      /**
+       * Update AI tools section based on survey state
+       */
+      function updateAIToolsSection(responses) {
+        const generateBtn = document.getElementById("generateSummaryBtn");
+        const validateBtn = document.getElementById("validateResponsesBtn");
+        const toggleBtn = document.getElementById("toggleSummaryVisibilityBtn");
+
+        // Check if elements exist before manipulating them
+        if (!generateBtn || !validateBtn || !toggleBtn) {
+          console.warn("AI tools elements not found in DOM");
+          return;
+        }
+
+        // Enable/disable buttons based on response count
+        const hasResponses = responses && responses.length > 0;
+        generateBtn.disabled = !hasResponses;
+        validateBtn.disabled = !hasResponses;
+
+        // Update button text and enable state
+        if (!hasResponses) {
+          generateBtn.innerHTML =
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>No Responses';
+          validateBtn.innerHTML =
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>No Responses';
+          generateBtn.className = generateBtn.className.replace(
+            "bg-blue-600 hover:bg-blue-700",
+            "bg-gray-400 cursor-not-allowed"
+          );
+          validateBtn.className = validateBtn.className.replace(
+            "bg-green-600 hover:bg-green-700",
+            "bg-gray-400 cursor-not-allowed"
+          );
+        } else {
+          generateBtn.innerHTML =
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>Generate Summary';
+          validateBtn.innerHTML =
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Validate Responses';
+          generateBtn.className = generateBtn.className.replace(
+            "bg-gray-400 cursor-not-allowed",
+            "bg-blue-600 hover:bg-blue-700"
+          );
+          validateBtn.className = validateBtn.className.replace(
+            "bg-gray-400 cursor-not-allowed",
+            "bg-green-600 hover:bg-green-700"
+          );
+        }
+
+        // Show/hide summary visibility toggle based on existing summary
+        if (currentSurvey.summary && currentSurvey.summary.content) {
+          toggleBtn.classList.remove("hidden");
+          const isVisible = currentSurvey.summary.isVisible;
+          const toggleText = document.getElementById("toggleSummaryText");
+          if (toggleText) {
+            toggleText.textContent = isVisible
+              ? "Make Summary Private"
+              : "Make Summary Public";
+          }
+
+          // Show existing summary
+          displayExistingSummary(currentSurvey.summary);
+        } else {
+          toggleBtn.classList.add("hidden");
+        }
+      }
+
+      /**
+       * Generate AI Summary
+       */
+      async function generateAISummary() {
+        if (
+          !currentSurvey ||
+          !currentSurvey.responses ||
+          currentSurvey.responses.length === 0
+        ) {
+          showError("No responses available to summarize");
+          return;
+        }
+
+        const generateBtn = document.getElementById("generateSummaryBtn");
+        if (!generateBtn) {
+          showError("Generate summary button not found");
+          return;
+        }
+
+        const originalContent = generateBtn.innerHTML;
+
+        try {
+          // Show loading state
+          generateBtn.disabled = true;
+          generateBtn.innerHTML =
+            '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Generating...';
+
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/summary`,
+            {
+              method: "POST",
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to generate summary"
+            );
+          }
+
+          const data = await response.json();
+
+          if (data.summary) {
+            // Update current survey object
+            currentSurvey.summary = data.summary;
+
+            // Display the new summary
+            displayExistingSummary(data.summary);
+
+            // Update AI tools section
+            updateAIToolsSection(currentSurvey.responses);
+
+            showSuccess("AI summary generated successfully!");
+          } else {
+            throw new Error("No summary returned from server");
+          }
+        } catch (error) {
+          console.error("Error generating summary:", error);
+          showError("Failed to generate summary: " + error.message);
+        } finally {
+          // Restore button
+          generateBtn.disabled = false;
+          generateBtn.innerHTML = originalContent;
+        }
+      }
+      /**
+       * Validate All Responses
+       */
+      async function validateAllResponses() {
+        if (
+          !currentSurvey ||
+          !currentSurvey.responses ||
+          currentSurvey.responses.length === 0
+        ) {
+          showError("No responses available to validate");
+          return;
+        }
+
+        const validateBtn = document.getElementById("validateResponsesBtn");
+        if (!validateBtn) {
+          showError("Validate responses button not found");
+          return;
+        }
+
+        const originalContent = validateBtn.innerHTML;
+
+        try {
+          // Show loading state
+          validateBtn.disabled = true;
+          validateBtn.innerHTML =
+            '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Validating...';
+
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/responses/validate`,
+            {
+              method: "GET",
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to validate responses"
+            );
+          }
+
+          const data = await response.json();
+
+          // Display validation results
+          displayValidationResults(data.validationResults || []);
+
+          showSuccess("Response validation completed!");
+        } catch (error) {
+          console.error("Error validating responses:", error);
+          showError("Failed to validate responses: " + error.message);
+        } finally {
+          // Restore button          validateBtn.disabled = false;
+          validateBtn.innerHTML = originalContent;
+        }
+      }
+
+      /**
+       * Toggle Summary Visibility
+       */
+      async function toggleSummaryVisibility() {
+        if (!currentSurvey || !currentSurvey.summary) {
+          showError("No summary available to toggle visibility");
+          return;
+        }
+
+        const toggleBtn = document.getElementById("toggleSummaryVisibilityBtn");
+        if (!toggleBtn) {
+          showError("Toggle button not found");
+          return;
+        }
+
+        const originalContent = toggleBtn.innerHTML;
+        const currentVisibility = currentSurvey.summary.isVisible;
+        const newVisibility = !currentVisibility;
+
+        try {
+          // Show loading state
+          toggleBtn.disabled = true;
+          toggleBtn.innerHTML =
+            '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Updating...';
+
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/summary/visibility`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({ isVisible: newVisibility }),
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to update visibility"
+            );
+          }
+
+          // Update current survey object
+          currentSurvey.summary.isVisible = newVisibility;
+
+          // Update button text
+          const toggleText = document.getElementById("toggleSummaryText");
+          if (toggleText) {
+            toggleText.textContent = newVisibility
+              ? "Make Summary Private"
+              : "Make Summary Public";
+          }
+
+          // Update summary display
+          displayExistingSummary(currentSurvey.summary);
+
+          showSuccess(`Summary is now ${newVisibility ? "public" : "private"}`);
+        } catch (error) {
+          console.error("Error toggling visibility:", error);
+          showError("Failed to update visibility: " + error.message);
+        } finally {
+          // Restore button
+          toggleBtn.disabled = false;
+          toggleBtn.innerHTML = originalContent;
+        }
+      }
+      /**
+       * Display existing summary
+       */
+      function displayExistingSummary(summary) {
+        const summarySection = document.getElementById("summaryDisplaySection");
+        const summaryContent = document.getElementById("summaryContent");
+        const summaryMeta = document.getElementById("summaryMeta");
+
+        if (!summarySection || !summaryContent || !summaryMeta) {
+          console.warn("Summary display elements not found in DOM");
+          return;
+        }
+
+        summaryContent.textContent = summary.content;
+        summaryMeta.innerHTML = `
+          Generated: ${formatDate(summary.generatedAt)} | 
+          Visibility: ${
+            summary.isVisible
+              ? '<span class="text-green-600 font-medium">Public (visible to participants)</span>'
+              : '<span class="text-gray-600 font-medium">Private (creator only)</span>'
+          }
+        `;
+
+        summarySection.classList.remove("hidden");
+      }
+      /**
+       * Hide summary display
+       */
+      function hideSummary() {
+        const summarySection = document.getElementById("summaryDisplaySection");
+        if (summarySection) {
+          summarySection.classList.add("hidden");
+        }
+      }
+      /**
+       * Display validation results
+       */
+      function displayValidationResults(validationResults) {
+        const validationSection = document.getElementById(
+          "validationResultsSection"
+        );
+        const validationContent = document.getElementById("validationContent");
+
+        if (!validationSection || !validationContent) {
+          console.warn("Validation display elements not found in DOM");
+          return;
+        }
+
+        if (validationResults.length === 0) {
+          validationContent.innerHTML = `
+            <div class="bg-green-100 border border-green-300 rounded-lg p-4 text-green-800">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="font-medium">All responses are valid!</span>
+              </div>
+              <p class="mt-1 text-sm">All ${currentSurvey.responses.length} responses comply with the survey guidelines.</p>
+            </div>
+          `;
+        } else {
+          validationContent.innerHTML = `
+            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4 text-yellow-800 mb-4">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <span class="font-medium">${
+                  validationResults.length
+                } response(s) found with issues</span>
+              </div>
+              <p class="mt-1 text-sm">Out of ${
+                currentSurvey.responses.length
+              } total responses, ${
+            validationResults.length
+          } do not comply with survey guidelines.</p>
+            </div>
+            <div class="space-y-3">
+              ${validationResults
+                .map(
+                  (result) => `
+                <div class="bg-white border border-red-300 rounded-lg p-4">
+                  <div class="flex justify-between items-start mb-2">
+                    <div class="font-medium text-gray-900">
+                      ${escapeHtml(result.username || "Anonymous User")}
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      Response ID: ${result.responseId}
+                    </div>
+                  </div>
+                  <div class="text-sm text-red-700 bg-red-50 rounded p-3">
+                    <strong>Issue:</strong> ${escapeHtml(result.reason)}
+                  </div>
+                  <div class="mt-2 text-sm text-gray-600">
+                    <strong>Response content:</strong><br>
+                    <div class="mt-1 p-2 bg-gray-50 rounded">
+                      ${escapeHtml(getResponseContent(result.responseId))}
+                    </div>
+                  </div>
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          `;
+        }
+
+        validationSection.classList.remove("hidden");
+      }
+
+      /**
+       * Get response content by ID
+       */
+      function getResponseContent(responseId) {
+        const response = currentSurvey.responses.find(
+          (r) => r._id === responseId
+        );
+        return response ? response.content : "Response not found";
+      }
+
+      /**
+       * Hide validation results
+       */
+      function hideValidationResults() {
+        const validationSection = document.getElementById(
+          "validationResultsSection"
+        );
+        validationSection.classList.add("hidden");
+      }
+
+      /**
+       * Escape HTML to prevent XSS
+       */
+      function escapeHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    </script>
+  </body>
+</html>

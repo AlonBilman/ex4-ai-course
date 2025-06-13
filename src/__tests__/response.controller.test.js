@@ -1,73 +1,23 @@
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const express = require('express');
 const request = require('supertest');
+const app = require('../../app'); // Import the main app
 const Survey = require('../models/survey.model');
 const User = require('../models/user.model');
-const surveyRoutes = require('../routes/survey.routes');
+const { createTestUser, createTestSurvey, generateTestToken } = require('./helpers/test.helper');
 
 jest.setTimeout(30000);
 
-process.env.JWT_SECRET = 'test-secret-key';
-process.env.NODE_ENV = 'test';
-
 describe('Response Controller', () => {
-  let mongoServer;
-  let app;
   let creator;
   let user;
   let survey;
-
-  beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-
-    // Create test users using the User model's save method for proper password hashing
-    const creatorUser = new User({
-      username: 'creator',
-      email: 'creator@example.com',
-      passwordHash: 'creator123'
-    });
-    creator = await creatorUser.save();
-    creator.token = jwt.sign({ id: creator._id }, process.env.JWT_SECRET);
-
-    const testUser = new User({
-      username: 'user',
-      email: 'user@example.com',
-      passwordHash: 'user123'
-    });
-    user = await testUser.save();
-    user.token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-
-    // Create test survey
-    survey = await Survey.create({
-      title: 'Test Survey',
-      description: 'Test Description',
-      area: 'Test Area',
-      question: 'Test Question?',
-      creator: creator._id,
-      guidelines: {
-        permittedResponses: 'Test responses',
-        minLength: 10,
-        maxLength: 2000
-      },
-      expiryDate: new Date(Date.now() + 86400000)
-    });
-
-    app = express();
-    app.use(express.json());
-    app.use('/surveys', surveyRoutes);
-  });
-
-  afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
+  let userToken;
 
   beforeEach(async () => {
+    creator = await createTestUser({ username: 'creator', email: 'creator@example.com' });
+    user = await createTestUser({ username: 'user', email: 'user@example.com' });
+    survey = await createTestSurvey(creator);
+    userToken = generateTestToken(user);
+
     await Survey.updateOne({ _id: survey._id }, { 
       $set: { 
         responses: [],
@@ -85,7 +35,7 @@ describe('Response Controller', () => {
 
       const res = await request(app)
         .post(`/surveys/${survey._id}/responses`)
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer ${userToken}`)
         .send(response);
 
       expect(res.status).toBe(201);
@@ -105,7 +55,7 @@ describe('Response Controller', () => {
 
       const res = await request(app)
         .post(`/surveys/${survey._id}/responses`)
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer ${userToken}`)
         .send(response);
 
       expect(res.status).toBe(400);
@@ -122,7 +72,7 @@ describe('Response Controller', () => {
 
       const submitRes = await request(app)
         .post(`/surveys/${survey._id}/responses`)
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer ${userToken}`)
         .send(initialResponse);
 
       const responseId = submitRes.body._id;
@@ -134,7 +84,7 @@ describe('Response Controller', () => {
 
       const updateRes = await request(app)
         .put(`/surveys/${survey._id}/responses/${responseId}`)
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer ${userToken}`)
         .send(updatedResponse);
 
       expect(updateRes.status).toBe(200);
@@ -151,7 +101,7 @@ describe('Response Controller', () => {
 
       const submitRes = await request(app)
         .post(`/surveys/${survey._id}/responses`)
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer ${userToken}`)
         .send(response);
 
       const responseId = submitRes.body._id;
@@ -159,7 +109,7 @@ describe('Response Controller', () => {
       // Then delete it
       const deleteRes = await request(app)
         .delete(`/surveys/${survey._id}/responses/${responseId}`)
-        .set('Authorization', `Bearer ${user.token}`);
+        .set('Authorization', `Bearer ${userToken}`);
 
       expect(deleteRes.status).toBe(200);
       expect(deleteRes.body.message).toBe('Response deleted successfully');
