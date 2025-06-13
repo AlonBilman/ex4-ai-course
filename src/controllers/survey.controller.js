@@ -83,19 +83,26 @@ const getSurveyById = async (req, res) => {
           message: "Survey not found",
         },
       });
+    } // Filter responses based on user role and survey status
+    const isCreator = survey.creator._id.toString() === req.user._id.toString();
+    const currentUserId = req.user._id.toString();
+
+    // Store the total response count before filtering
+    const totalResponseCount = survey.responses.length;
+
+    if (!isCreator) {
+      // Non-creators can only see their own responses
+      survey.responses = survey.responses.filter(
+        (response) => response.user._id.toString() === currentUserId
+      );
     }
 
-    // Hide responses if user is not creator and survey is not closed
-    if (
-      survey.creator._id.toString() !== req.user._id.toString() &&
-      !survey.isClosed
-    ) {
-      survey.responses = [];
-    }
-
+    // Add response count to survey object
+    const surveyObj = survey.toObject();
+    surveyObj.responseCount = totalResponseCount;
     res.json({
       message: "Survey retrieved successfully",
-      survey,
+      survey: surveyObj,
     });
   } catch (error) {
     logger.error("Error fetching survey:", error);

@@ -204,6 +204,42 @@
             </div>
           </div>
         </div>
+
+        <!-- Creator Response Management Section -->
+        <div
+          id="creatorModerationSection"
+          class="hidden bg-white rounded-lg shadow-lg p-6 mt-6"
+        >
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Response Moderation (Creator Only)
+          </h3>
+
+          <!-- All Responses List -->
+          <div id="allResponsesList" class="space-y-4">
+            <!-- Dynamic content will be inserted here -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="noResponsesMessage" class="hidden text-center py-8">
+            <div class="text-gray-400">
+              <svg
+                class="w-12 h-12 mx-auto mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 8h10m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2m0 0v10a2 2 0 002 2h10a2 2 0 002-2V8m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2"
+                ></path>
+              </svg>
+              <h4 class="text-lg font-medium mb-2">No Responses Yet</h4>
+              <p>No one has responded to this survey yet.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
     <!-- Scripts -->
@@ -305,7 +341,7 @@
           currentSurvey.expiryDate
         );
         document.getElementById("responseCount").textContent =
-          currentSurvey.responses?.length || 0;
+          currentSurvey.responseCount || currentSurvey.responses?.length || 0;
 
         // Display survey question
         const question =
@@ -361,10 +397,11 @@
         } else {
           statusElement.textContent = "Expired";
           statusElement.className = "font-medium text-gray-600";
-        }
-
-        // Display appropriate response section
+        } // Display appropriate response section
         displayResponseSection(canRespond);
+
+        // Display creator moderation section if user is creator
+        displayCreatorModerationSection();
       }
 
       /**
@@ -690,6 +727,116 @@
           hour: "2-digit",
           minute: "2-digit",
         });
+      }
+      /**
+       * Display creator moderation section if user is the survey creator
+       */
+      function displayCreatorModerationSection() {
+        const user = getUserInfo();
+        const isCreator = currentSurvey.creator._id === user.userId;
+
+        if (!isCreator) {
+          return; // Hide section for non-creators
+        }
+
+        const moderationSection = document.getElementById(
+          "creatorModerationSection"
+        );
+        const allResponsesList = document.getElementById("allResponsesList");
+        const noResponsesMessage =
+          document.getElementById("noResponsesMessage");
+
+        moderationSection.classList.remove("hidden");
+
+        // Show all responses for creators (backend already provides all responses for creators)
+        const allResponses = currentSurvey.responses || [];
+
+        if (allResponses.length === 0) {
+          noResponsesMessage.classList.remove("hidden");
+          allResponsesList.innerHTML = "";
+          return;
+        }
+
+        noResponsesMessage.classList.add("hidden");
+
+        // Generate HTML for all responses
+        allResponsesList.innerHTML = allResponses
+          .map((response, index) => {
+            const username = response.user?.username || "Unknown User";
+            const isCurrentUser = response.user?._id === user.userId;
+
+            return `
+            <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h5 class="font-medium text-gray-900">
+                    ${escapeHtml(username)}
+                    ${
+                      isCurrentUser
+                        ? '<span class="text-blue-600 text-sm">(You)</span>'
+                        : ""
+                    }
+                  </h5>
+                  <span class="text-sm text-gray-500">Submitted on ${formatDate(
+                    response.createdAt
+                  )}</span>
+                </div>
+                <button
+                  onclick="deleteResponseAsCreator('${
+                    response._id
+                  }', '${escapeHtml(username)}')"
+                  class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                  title="Delete this response"
+                >
+                  Delete
+                </button>
+              </div>
+              <div class="text-gray-700 bg-white p-3 rounded border">
+                ${escapeHtml(response.content)}
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+      }
+
+      /**
+       * Delete a response as the survey creator
+       */
+      async function deleteResponseAsCreator(responseId, username) {
+        if (
+          !confirm(
+            `Are you sure you want to delete ${username}'s response? This action cannot be undone.`
+          )
+        ) {
+          return;
+        }
+
+        try {
+          const response = await authenticatedFetch(
+            `${API_BASE_URL}/surveys/${currentSurvey._id}/responses/${responseId}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error?.message || "Failed to delete response"
+            );
+          }
+
+          showSuccess(`${username}'s response deleted successfully!`);
+
+          // Refresh the page to show updated responses
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } catch (error) {
+          console.error("Error deleting response:", error);
+          showError("Failed to delete response: " + error.message);
+        }
       }
 
       /**
