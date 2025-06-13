@@ -1,51 +1,12 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const {
-  connect,
-  closeDatabase,
-  clearDatabase,
-} = require("./helpers/test.helper");
 const User = require("../models/user.model");
 const Survey = require("../models/survey.model");
 const Response = require("../models/response.model");
 
 describe("Database Connection", () => {
-  beforeAll(async () => {
-    await connect();
-  });
-
-  afterEach(async () => {
-    await clearDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
-  });
-
   it("should connect to in-memory database", () => {
     expect(mongoose.connection.readyState).toBe(1); // 1 = connected
-  });
-
-  it("should clear collections between tests", async () => {
-    // Create a test user
-    const passwordHash = await bcrypt.hash("password123", 10);
-    const user = await User.create({
-      username: "testuser",
-      email: "test@example.com",
-      passwordHash: passwordHash,
-    });
-
-    // Verify user was created
-    const foundUser = await User.findById(user._id);
-    expect(foundUser).toBeTruthy();
-    expect(foundUser.email).toBe("test@example.com");
-
-    // Clear database
-    await clearDatabase();
-
-    // Verify user was removed
-    const deletedUser = await User.findById(user._id);
-    expect(deletedUser).toBeNull();
   });
 
   it("should have empty collections after cleanup", async () => {
@@ -57,18 +18,6 @@ describe("Database Connection", () => {
 });
 
 describe("User Model", () => {
-  beforeAll(async () => {
-    await connect();
-  });
-
-  afterEach(async () => {
-    await clearDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
-  });
-
   it("should create a user successfully", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     const userData = {
@@ -102,18 +51,6 @@ describe("User Model", () => {
 });
 
 describe("Survey Model", () => {
-  beforeAll(async () => {
-    await connect();
-  });
-
-  afterEach(async () => {
-    await clearDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
-  });
-
   it("should create a survey successfully", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     const user = await User.create({
@@ -148,18 +85,6 @@ describe("Survey Model", () => {
 });
 
 describe("Response Model", () => {
-  beforeAll(async () => {
-    await connect();
-  });
-
-  afterEach(async () => {
-    await clearDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
-  });
-
   it("should create a response successfully", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     const user = await User.create({

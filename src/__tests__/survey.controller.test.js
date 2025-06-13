@@ -1,21 +1,7 @@
-// Set up environment before requiring app
-process.env.NODE_ENV = "test";
-process.env.JWT_SECRET = "test-secret-key";
-process.env.USE_MOCK_LLM = "true";
-
 const request = require("supertest");
-const express = require("express");
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const surveyRoutes = require("../routes/survey.routes");
-const {
-  connect,
-  closeDatabase,
-  clearDatabase,
-} = require("./helpers/test.helper");
-const User = require("../models/user.model");
+const app = require("../app");
 const Survey = require("../models/survey.model");
+const { createTestUser, generateTestToken, createTestSurvey } = require("./helpers/test.helper");
 
 // Mock the LLM service for all tests
 jest.mock("../services/llm.service", () =>
@@ -38,52 +24,16 @@ jest.setTimeout(30000);
  * Each test uses the in-memory DB and is fully independent.
  */
 describe("Survey Controller", () => {
-  let app;
   let creator;
   let user;
   let creatorToken;
   let userToken;
 
-  beforeAll(async () => {
-    await connect();
-    app = express();
-    app.use(express.json());
-    app.use("/surveys", surveyRoutes);
-
-    // Create test users using User model save method for proper password hashing
-    const creatorUser = new User({
-      username: "creator",
-      email: "creator@example.com",
-      passwordHash: "creator123",
-    });
-    creator = await creatorUser.save();
-
-    const testUser = new User({
-      username: "user",
-      email: "user@example.com",
-      passwordHash: "user123",
-    });
-    user = await testUser.save();
-
-    creatorToken = jwt.sign(
-      { id: creator._id, role: creator.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    userToken = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-  });
-
-  afterEach(async () => {
-    await clearDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
+  beforeEach(async () => {
+    creator = await createTestUser({ username: 'creator', email: 'creator@example.com' });
+    user = await createTestUser({ username: 'user', email: 'user@example.com' });
+    creatorToken = generateTestToken(creator);
+    userToken = generateTestToken(user);
   });
 
   describe("Survey Creation", () => {
@@ -127,16 +77,7 @@ describe("Survey Controller", () => {
     let survey;
 
     beforeEach(async () => {
-      survey = await Survey.create({
-        title: "Test Survey",
-        area: "Test Area",
-        guidelines: {
-          question: "What is your favorite food?",
-          permittedResponses: "Any food-related responses are welcome"
-        },
-        creator: creator._id,
-        expiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      });
+      survey = await createTestSurvey(creator);
     });
 
     it("should allow a user to submit a response", async () => {
@@ -204,18 +145,8 @@ describe("Survey Controller", () => {
         });
 
       // Create another user for second response
-      const anotherUser = new User({
-        username: "another",
-        email: "another@example.com",
-        passwordHash: "another123",
-      });
-      await anotherUser.save();
-      
-      const anotherToken = jwt.sign(
-        { id: anotherUser._id, role: anotherUser.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
+      const anotherUser = await createTestUser({ username: 'another', email: 'another@example.com' });
+      const anotherToken = generateTestToken(anotherUser);
 
       // Try to submit second response which should fail due to maxResponses
       const res = await request(app)
@@ -226,7 +157,7 @@ describe("Survey Controller", () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.error.message).toContain("maximum responses");
+      expect(res.body.error.message).toContain("Survey is not accepting new responses at this time.");
     });
   });
 

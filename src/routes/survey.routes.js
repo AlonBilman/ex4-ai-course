@@ -34,6 +34,8 @@ router.delete("/:id", deleteSurvey);
 
 // Response management
 router.post("/:id/responses", submitResponse);
+router.get("/:id/responses", require("../controllers/response.controller").getSurveyResponses);
+router.get("/:id/responses/:responseId", require("../controllers/response.controller").getResponse);
 router.put("/:id/responses/:responseId", updateResponse);
 router.delete("/:id/responses/:responseId", removeResponse);
 

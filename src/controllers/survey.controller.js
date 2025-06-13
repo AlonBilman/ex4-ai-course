@@ -256,10 +256,31 @@ const submitResponse = async (req, res) => {
       });
     }
 
-    if (!survey.canAcceptResponses()) {
+    // Check if survey is inactive
+    if (!survey.isActive) {
       return res.status(400).json({
         error: {
           code: "SURVEY_INACTIVE",
+          message: "Survey is not active",
+        },
+      });
+    }
+
+    // Enforce maxResponses if set (check this before expiry to give priority to this message)
+    if (survey.maxResponses && survey.responses.length >= survey.maxResponses) {
+      return res.status(400).json({
+        error: {
+          code: "MAX_RESPONSES_REACHED",
+          message: "Survey is not accepting new responses at this time.",
+        },
+      });
+    }
+
+    // Check if survey is expired
+    if (survey.expiryDate && survey.expiryDate < new Date()) {
+      return res.status(400).json({
+        error: {
+          code: "SURVEY_EXPIRED",
           message: "Survey has expired",
         },
       });
@@ -279,16 +300,6 @@ const submitResponse = async (req, res) => {
         error: {
           code: "RESPONSE_ALREADY_EXISTS",
           message: "You have already submitted a response to this survey",
-        },
-      });
-    }
-
-    // Enforce maxResponses if set
-    if (survey.maxResponses && survey.responses.length >= survey.maxResponses) {
-      return res.status(400).json({
-        error: {
-          code: "MAX_RESPONSES_REACHED",
-          message: "Survey has reached maximum responses",
         },
       });
     }
@@ -611,12 +622,22 @@ const updateResponse = async (req, res) => {
         },
       });
     }
-    // Allow updates even if survey has expired, but not if it's inactive
+    // Check if survey is inactive
     if (!survey.isActive) {
       return res.status(400).json({
         error: {
           code: "SURVEY_INACTIVE",
           message: "Survey is no longer active",
+        },
+      });
+    }
+
+    // Check if survey is expired
+    if (survey.expiryDate && survey.expiryDate < new Date()) {
+      return res.status(400).json({
+        error: {
+          code: "SURVEY_EXPIRED",
+          message: "Survey has expired",
         },
       });
     }

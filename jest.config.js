@@ -2,7 +2,10 @@ module.exports = {
   testEnvironment: "node",
   testMatch: ["**/__tests__/**/*.test.js"],
   collectCoverageFrom: [
-    "src/utils/**/*.js",
+    "src/**/*.js",
+    "!src/__tests__/**",
+    "!src/__mocks__/**",
+    "!src/tests/**"
   ],
   coverageThreshold: {
     global: {
@@ -13,4 +16,5 @@ module.exports = {
     },
   },
   setupFilesAfterEnv: ["./jest.setup.js"],
+  testTimeout: 30000,
 };
