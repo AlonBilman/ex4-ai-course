@@ -18,32 +18,45 @@
                        └─────────────────┘
 ```
 
-### Directory Structure
+## Project Structure
+
 ```
-src/
-├── config/           # Configuration (logger, swagger, rate limiting)
-├── controllers/      # Request handlers and business logic
-│   ├── auth.controller.js
-│   ├── survey.controller.js
-│   └── response.controller.js
-├── middleware/       # Authentication, validation, error handling
-├── models/          # Mongoose data models
-│   ├── user.model.js
-│   ├── survey.model.js
-│   └── response.model.js
-├── routes/          # Express route definitions
-│   ├── auth.routes.js
-│   ├── survey.routes.js
-│   └── response.routes.js
-├── services/        # External service integrations (LLM)
-│   ├── llm.service.js
-│   └── survey.service.js
-├── utils/           # Utility functions and validation schemas
-├── prompts/         # LLM prompt templates (also in root/prompts/)
-├── tests/           # Test setup files
-├── __tests__/       # Test suites
-├── __mocks__/       # Mock implementations for testing
-└── app.js           # Main application entry point
+project-root/
+├── src/                          # Main application code
+│   ├── controllers/              # Request handlers
+│   ├── models/                   # Database models (MongoDB/Mongoose)
+│   ├── routes/                   # API route definitions
+│   ├── services/                 # Business logic layer
+│   ├── middleware/               # Custom middleware functions
+│   ├── utils/                    # Helper functions and utilities
+│   ├── config/                   # Configuration files
+│   ├── prompts/                  # LLM prompt templates
+│   ├── tests/                    # Test setup files
+│   ├── __tests__/                # Unit tests
+│   ├── __mocks__/                # Mock implementations
+│   └── app.js                    # Main application entry point
+├── frontend/                     # Frontend HTML files
+│   ├── assets/                   # Shared frontend assets
+│   ├── index.html                # Landing page
+│   ├── login.html                # Login page
+│   ├── register.html             # Registration page
+│   ├── dashboard.html            # User dashboard
+│   ├── create-survey.html        # Survey creation page
+│   └── survey.html               # Survey participation page
+├── assets/                       # Global static assets
+│   ├── css/                      # Stylesheets
+│   └── js/                       # JavaScript files
+├── prompts/                      # Additional LLM prompts
+├── logs/                         # Application log files
+├── coverage/                     # Test coverage reports
+├── package.json                  # Node.js dependencies and scripts
+├── jest.config.js                # Jest testing configuration
+├── jest.setup.js                 # Jest setup file
+├── server.js                     # Alternative server entry point (references src/app.js)
+├── design.md                     # Project design documentation
+├── reflection.md                 # Project reflection notes
+├── Survey-Server-API.postman_collection.json  # Postman API collection
+└── Survey-Server-Environment.postman_environment.json  # Postman environment
 ```
 
 ## Core Components
