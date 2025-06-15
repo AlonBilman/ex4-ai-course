@@ -97,17 +97,56 @@ USE_MOCK_LLM=false
 
 ## Running the Application
 
-Development mode:
+### Quick Start (Development)
+
+1. **Start MongoDB** (if using local MongoDB):
+   ```bash
+   mongod
+   ```
+
+2. **Start the server**:
+   ```bash
+   npm run dev
+   ```
+
+3. **Access the application**:
+   - API Server: http://localhost:3000
+   - Frontend: Open `frontend/index.html` in your browser
+   - API Documentation: http://localhost:3000/api-docs
+
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-Production mode:
+This command:
+- Starts the server with nodemon for auto-restart on file changes
+- Uses your `.env` configuration
+- Enables detailed logging
+
+### Production Mode
 
 ```bash
 npm start
 ```
+
+This command:
+- Starts the server with Node.js
+- Uses production optimizations
+- Requires `NODE_ENV=production` in `.env`
+
+### Frontend Access
+
+The project includes HTML frontend files in the `frontend/` directory:
+- `index.html` - Main landing page
+- `login.html` - User login
+- `register.html` - User registration  
+- `dashboard.html` - User dashboard
+- `create-survey.html` - Survey creation
+- `survey.html` - Survey participation
+
+Simply open these files in your browser after starting the server.
 
 ## Testing
 
@@ -118,6 +157,32 @@ npm test
 ```
 
 Tests automatically use mock LLM responses and in-memory MongoDB for fast, reliable testing.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **MongoDB Connection Error**:
+   - Ensure MongoDB is running: `mongod` or start MongoDB service
+   - Check `MONGODB_URI` in your `.env` file
+   - For MongoDB Atlas, ensure your IP is whitelisted
+
+2. **Port Already in Use**:
+   - Change `PORT` in `.env` file to a different port (e.g., 3001)
+   - Or kill the process using the port: `lsof -ti:3000 | xargs kill`
+
+3. **LLM API Errors**:
+   - Set `USE_MOCK_LLM=true` in `.env` for development without API costs
+   - Verify `OPENROUTER_API_KEY` is correct for production use
+
+4. **Frontend Not Loading**:
+   - Ensure the server is running on the correct port
+   - Check browser console for CORS errors
+   - Verify the API base URL in frontend files matches your server port
+
+5. **JWT Token Issues**:
+   - Ensure `JWT_SECRET` is set in `.env`
+   - Clear browser localStorage/cookies if experiencing auth issues
 
 ## How to Verify Mock/Test Mode
 
