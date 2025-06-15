@@ -5,14 +5,16 @@
 ### High-Level Architecture
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client Apps   │    │   Express API   │    │    MongoDB      │
-│   (Frontend)    │◄──►│    Server       │◄──►│   Database      │
+│   Frontend      │    │   Express API   │    │    MongoDB      │
+│   HTML/JS/CSS   │◄──►│    Server       │◄──►│   Database      │
+│   (Static)      │    │   (src/app.js)  │    │   (Mongoose)    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                               │
                               ▼
                        ┌─────────────────┐
                        │ OpenRouter.ai   │
                        │   LLM API       │
+                       │ (or Mock LLM)   │
                        └─────────────────┘
 ```
 
@@ -21,14 +23,27 @@
 src/
 ├── config/           # Configuration (logger, swagger, rate limiting)
 ├── controllers/      # Request handlers and business logic
+│   ├── auth.controller.js
+│   ├── survey.controller.js
+│   └── response.controller.js
 ├── middleware/       # Authentication, validation, error handling
 ├── models/          # Mongoose data models
+│   ├── user.model.js
+│   ├── survey.model.js
+│   └── response.model.js
 ├── routes/          # Express route definitions
+│   ├── auth.routes.js
+│   ├── survey.routes.js
+│   └── response.routes.js
 ├── services/        # External service integrations (LLM)
+│   ├── llm.service.js
+│   └── survey.service.js
 ├── utils/           # Utility functions and validation schemas
-├── prompts/         # LLM prompt templates
+├── prompts/         # LLM prompt templates (also in root/prompts/)
+├── tests/           # Test setup files
 ├── __tests__/       # Test suites
-└── __mocks__/       # Mock implementations for testing
+├── __mocks__/       # Mock implementations for testing
+└── app.js           # Main application entry point
 ```
 
 ## Core Components
@@ -55,28 +70,38 @@ src/
 #### Survey Model
 ```javascript
 {
-  title: String,
+  title: String (required),
   area: String,
+  description: String,
   guidelines: {
     question: String,
     permittedDomains: [String],
     permittedResponses: String,
     summaryInstructions: String
   },
-  creator: ObjectId (ref: User),
-  expiryDate: Date,
-  isActive: Boolean,
+  creator: ObjectId (ref: User, required),
+  expiryDate: Date (required, must be future),
+  isActive: Boolean (default: true),
+  maxResponses: Number (default: 100, min: 1),
   responses: [{
     user: ObjectId (ref: User),
-    content: String,
+    content: String (max: 2000 chars),
     createdAt: Date,
     updatedAt: Date
   }],
   summary: {
     content: String,
-    isVisible: Boolean,
+    isVisible: Boolean (default: false),
     generatedAt: Date
-  }
+  },
+  questions: [{
+    text: String (max: 500 chars),
+    type: String (enum: text/multiple_choice/rating),
+    required: Boolean (default: true),
+    options: [String] (for multiple_choice)
+  }],
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
@@ -89,35 +114,44 @@ src/
 #### Survey Management Routes
 - `GET /surveys` - List all surveys (public)
 - `POST /surveys` - Create new survey (authenticated)
-- `GET /surveys/:id` - Get survey details
+- `GET /surveys/:id` - Get survey details (authenticated)
 - `PATCH /surveys/:id` - Update survey (creator only)
 - `DELETE /surveys/:id` - Delete survey (creator only)
 - `POST /surveys/:id/close` - Close survey early (creator only)
 
 #### Response Management Routes
-- `POST /surveys/:id/responses` - Submit response
-- `PUT /surveys/:id/responses/:responseId` - Update own response
-- `DELETE /surveys/:id/responses/:responseId` - Delete own response
+- `POST /surveys/:id/responses` - Submit response (authenticated)
+- `GET /surveys/:id/responses` - Get all survey responses (authenticated)
+- `GET /surveys/:id/responses/:responseId` - Get specific response (authenticated)
+- `PUT /surveys/:id/responses/:responseId` - Update own response (authenticated)
+- `DELETE /surveys/:id/responses/:responseId` - Delete own response (authenticated)
 
 #### AI-Powered Routes
-- `POST /surveys/search` - Natural language survey search
+- `POST /surveys/search` - Natural language survey search (public)
 - `POST /surveys/:id/summary` - Generate AI summary (creator only)
-- `PATCH /surveys/:id/summary/visibility` - Toggle summary visibility
-- `GET /surveys/:id/responses/:responseId/validate` - Validate single response
-- `GET /surveys/:id/responses/validate` - Validate all responses
+- `PATCH /surveys/:id/summary/visibility` - Toggle summary visibility (creator only)
+- `GET /surveys/:id/responses/:responseId/validate` - Validate single response (creator only)
+- `GET /surveys/:id/responses/validate` - Validate all responses (creator only)
 
 ### 4. LLM Integration
 
 #### Service Architecture
 - **Abstracted LLM Service** with OpenRouter.ai integration
-- **Mock implementation** for testing environments
+- **Mock implementation** for testing environments (controlled by `USE_MOCK_LLM` env var)
 - **Prompt template system** loaded from `/prompts/` directory
 - **Error handling** with fallback responses
+- **Environment-based switching** between real and mock responses
 
 #### AI Functions
 1. **Search**: Semantic search across surveys using natural language
-2. **Summarization**: Generate summaries based on survey responses
-3. **Validation**: Check response adherence to survey guidelines
+2. **Summarization**: Generate summaries based on survey responses with custom instructions
+3. **Validation**: Check response adherence to survey guidelines and permitted domains
+
+#### Prompt Templates
+Located in `/prompts/` directory:
+- `searchPrompt.txt` - For natural language survey search
+- `summaryPrompt.txt` - For generating survey summaries
+- `validatePrompt.txt` - For validating responses against guidelines
 
 ## Key Design Decisions
 
@@ -129,20 +163,24 @@ src/
 - Bearer tokens work well with frontend frameworks
 
 ### 2. Database Schema Design
-**Decision**: Embedded responses within survey documents
+**Decision**: Embedded responses within survey documents + separate response model
 **Rationale**:
 - Responses are tightly coupled to surveys
 - Reduces query complexity for survey+responses operations
 - MongoDB handles array operations efficiently
 - Simplifies aggregation for AI summarization
+- Additional response model provides flexibility for complex queries
+- Schema includes validation for response length (2000 chars max)
 
 ### 3. LLM Service Abstraction
-**Decision**: Service layer with environment-based mocking
+**Decision**: Service layer with environment-based mocking (`USE_MOCK_LLM` flag)
 **Rationale**:
 - Enables testing without external API calls
 - Centralizes LLM configuration and error handling
 - Allows easy switching between LLM providers
 - Reduces testing costs and flakiness
+- Environment variable controls real vs mock behavior
+- Automatic mock mode in test environment (`NODE_ENV=test`)
 
 ### 4. Prompt Management
 **Decision**: File-based prompt templates
@@ -167,14 +205,32 @@ src/
 - Protects authentication endpoints from brute force
 - Allows normal API usage while preventing spam
 
+## Additional Features
+
+### 1. Survey Questions System
+- **Flexible question types**: text, multiple_choice, rating
+- **Validation**: Required questions, option validation for multiple choice
+- **Character limits**: Questions max 500 chars, responses max 2000 chars
+
+### 2. Survey Capacity Management
+- **Response limits**: Configurable `maxResponses` per survey (default: 100)
+- **Automatic closure**: Surveys auto-close when reaching capacity
+- **Status checking**: Built-in methods to check if survey can accept responses
+
+### 3. Enhanced Data Validation
+- **User model**: Email format validation, password hashing with bcrypt
+- **Survey model**: Future date validation for expiry, character limits
+- **Index optimization**: Database indexes for faster queries on common patterns
+
 ## Trade-offs
 
 ### 1. Embedded vs Referenced Responses
-**Chosen**: Embedded responses in survey documents
+**Chosen**: Embedded responses in survey documents + separate model
 **Trade-off**: 
 - ✅ Simpler queries and atomic operations
+- ✅ Flexibility with separate response model
 - ❌ Document size limits with many responses
-- ❌ Harder to query responses independently
+- ❌ Some data duplication
 
 ### 2. Synchronous vs Asynchronous AI Processing
 **Chosen**: Synchronous LLM calls
@@ -212,9 +268,14 @@ src/
 ## Performance Considerations
 
 1. **Database Indexing**: Optimized queries for common access patterns
+   - Creator and creation date indexes
+   - Text search indexes for survey content
+   - Expiry date and status indexes
 2. **Response Pagination**: Limiting large survey result sets
-3. **LLM Caching**: Future consideration for repeated AI operations
-4. **Rate Limiting**: Prevents system overload from expensive operations
+3. **Data Validation**: Schema-level validation prevents invalid data storage
+4. **LLM Caching**: Future consideration for repeated AI operations
+5. **Rate Limiting**: Prevents system overload from expensive operations
+6. **Capacity Management**: `maxResponses` limits prevent document bloat
 
 ## Future Enhancements
 
