@@ -375,4 +375,136 @@ describe('Response Controller - Basic Tests', () => {
       expect(response.body.error.message).toBe('You can only delete your own responses');
     });
   });
+
+  describe('Error Handling', () => {
+    it('should handle submitResponse with invalid survey ID', async () => {
+      const response = await request(app)
+        .post(`/surveys/invalid-id/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Response to invalid survey'
+        });
+
+      expect(response.status).toBe(500);
+      expect(response.body.error.message).toBeDefined();
+    });
+
+    it('should handle getSurveyResponses with invalid survey ID', async () => {
+      const response = await request(app)
+        .get(`/surveys/invalid-id/responses`)
+        .set('Authorization', `Bearer ${creatorToken}`);
+
+      expect(response.status).toBe(500);
+      expect(response.body.error.message).toBeDefined();
+    });
+
+    it('should handle getResponse with invalid survey ID', async () => {
+      const response = await request(app)
+        .get(`/surveys/invalid-id/responses/507f1f77bcf86cd799439011`)
+        .set('Authorization', `Bearer ${creatorToken}`);
+
+      expect(response.status).toBe(500);
+      expect(response.body.error.message).toBeDefined();
+    });
+
+    it('should handle updateResponse with invalid survey ID', async () => {
+      const response = await request(app)
+        .put(`/surveys/invalid-id/responses/507f1f77bcf86cd799439011`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Updated content' });
+
+      expect(response.status).toBe(500);
+      expect(response.body.error.message).toBeDefined();
+    });
+
+    it('should handle deleteResponse with invalid survey ID', async () => {
+      const response = await request(app)
+        .delete(`/surveys/invalid-id/responses/507f1f77bcf86cd799439011`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(500);
+      expect(response.body.error.message).toBeDefined();
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle survey without max responses limit', async () => {
+      // Create survey without max responses
+      const noLimitTestSurvey = await createTestSurvey(creator, { maxResponses: null });
+
+      const response = await request(app)
+        .post(`/surveys/${noLimitTestSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Response to unlimited survey'
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.content).toBe('Response to unlimited survey');
+    });
+
+    it('should handle empty content as falsy value', async () => {
+      const response = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: ''
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.message).toBe('"content" is not allowed to be empty');
+    });
+
+    it('should handle null content', async () => {
+      const response = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: null
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.message).toBe('"content" must be a string');
+    });
+
+    it('should handle survey with future expiry date', async () => {
+      // Create survey with far future expiry
+      const futureExpiryTestSurvey = await createTestSurvey(creator, { 
+        expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
+      });
+
+      const response = await request(app)
+        .post(`/surveys/${futureExpiryTestSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Response to future expiry survey'
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.content).toBe('Response to future expiry survey');
+    });
+
+    it('should handle updating response when survey has future expiry', async () => {
+      const futureExpiryTestSurvey = await createTestSurvey(creator, { 
+        expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
+      });
+
+      // Submit a response first
+      const submitRes = await request(app)
+        .post(`/surveys/${futureExpiryTestSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Original content' });
+
+      const responseId = submitRes.body._id;
+
+      // Update the response
+      const response = await request(app)
+        .put(`/surveys/${futureExpiryTestSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Updated content' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.content).toBe('Updated content');
+    });
+  });
 }); 
