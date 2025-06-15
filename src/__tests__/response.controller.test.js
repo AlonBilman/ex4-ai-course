@@ -621,10 +621,6 @@ describe('Response Controller - Basic Tests', () => {
       expect(creatorAccess.body.response.content).toBe('Response for ownership test');
       expect(ownerAccess.body.response.content).toBe('Response for ownership test');
     });
-
-
-
-
   });
 
   describe('Success Path Coverage', () => {
@@ -647,10 +643,6 @@ describe('Response Controller - Basic Tests', () => {
       expect(new Date(response.body.updatedAt)).toBeInstanceOf(Date);
     });
 
-
-
-
-
     it('should cover survey.save() and response creation path', async () => {
       // Test the complete save path with response creation
       const beforeCount = (await Survey.findById(testSurvey._id)).responses.length;
@@ -671,12 +663,6 @@ describe('Response Controller - Basic Tests', () => {
       expect(savedResponse.content).toBe('Testing save path and response creation');
       expect(savedResponse.user.toString()).toBe(user._id.toString());
     });
-
-
-
-
-
-
 
     it('should verify getSurveyResponses with populated user data', async () => {
       // Submit multiple responses
@@ -825,11 +811,480 @@ describe('Response Controller - Basic Tests', () => {
       expect(validRes.status).toBe(201);
       expect(validRes.body.content).toBe('Valid content after validation test');
     });
+  });
 
+  describe('Direct Controller Method Testing for Maximum Coverage', () => {
+    it('should directly test submitResponse to hit all success lines 5-53', async () => {
+      const mockReq = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Direct submitResponse test content' },
+        user: { id: user._id.toString() }
+      };
 
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
 
+      const responseController = require('../controllers/response.controller');
+      await responseController.submitResponse(mockReq, mockRes);
 
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+      expect(mockRes.json).toHaveBeenCalled();
+      
+      const createdResponse = mockRes.json.mock.calls[0][0];
+      expect(createdResponse.user.toString()).toBe(user._id.toString());
+      expect(createdResponse.content).toBe('Direct submitResponse test content');
+      expect(createdResponse.createdAt).toBeInstanceOf(Date);
+      expect(createdResponse.updatedAt).toBeInstanceOf(Date);
 
+      // Verify database persistence
+      const updatedSurvey = await Survey.findById(testSurvey._id);
+      const savedResponse = updatedSurvey.responses.find(r => r.content === 'Direct submitResponse test content');
+      expect(savedResponse).toBeTruthy();
+    });
 
+    it('should directly test updateResponse to hit all success lines 115-145', async () => {
+      // First create a response
+      const createRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Original content for direct update' });
+
+      const responseId = createRes.body._id;
+
+      const mockReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId
+        },
+        body: { content: 'Direct updateResponse test content' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.updateResponse(mockReq, mockRes);
+
+      expect(mockRes.json).toHaveBeenCalled();
+      
+      const updatedResponse = mockRes.json.mock.calls[0][0];
+      expect(updatedResponse.content).toBe('Direct updateResponse test content');
+      expect(updatedResponse.updatedAt).toBeInstanceOf(Date);
+
+      // Verify database persistence
+      const updatedSurvey = await Survey.findById(testSurvey._id);
+      const savedResponse = updatedSurvey.responses.id(responseId);
+      expect(savedResponse.content).toBe('Direct updateResponse test content');
+    });
+
+    it('should directly test deleteResponse to hit all success lines 153-174', async () => {
+      // First create a response
+      const createRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Content for direct delete test' });
+
+      const responseId = createRes.body._id;
+
+      const mockReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId
+        },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.deleteResponse(mockReq, mockRes);
+
+      expect(mockRes.json).toHaveBeenCalledWith({ message: 'Response deleted successfully' });
+
+      // Verify database deletion
+      const updatedSurvey = await Survey.findById(testSurvey._id);
+      const deletedResponse = updatedSurvey.responses.id(responseId);
+      expect(deletedResponse).toBeNull();
+    });
+
+    it('should test controller validation logic directly (line 10-12)', async () => {
+      // Test empty content
+      const mockReq1 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: '' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes1 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.submitResponse(mockReq1, mockRes1);
+
+      expect(mockRes1.status).toHaveBeenCalledWith(400);
+      expect(mockRes1.json).toHaveBeenCalledWith({ error: { message: 'Content is required' } });
+
+      // Test non-string content
+      const mockReq2 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 123 },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes2 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq2, mockRes2);
+
+      expect(mockRes2.status).toHaveBeenCalledWith(400);
+      expect(mockRes2.json).toHaveBeenCalledWith({ error: { message: 'Content is required' } });
+    });
+
+    it('should test response array push and new response return (lines 47-53)', async () => {
+      const initialCount = (await Survey.findById(testSurvey._id)).responses.length;
+
+      const mockReq = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Testing array push and response return' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.submitResponse(mockReq, mockRes);
+
+      // Verify response was pushed to array
+      const finalSurvey = await Survey.findById(testSurvey._id);
+      expect(finalSurvey.responses.length).toBe(initialCount + 1);
+
+      // Verify the returned response is the last one added
+      const returnedResponse = mockRes.json.mock.calls[0][0];
+      const lastResponse = finalSurvey.responses[finalSurvey.responses.length - 1];
+      expect(returnedResponse._id.toString()).toBe(lastResponse._id.toString());
+      expect(returnedResponse.content).toBe('Testing array push and response return');
+    });
+
+    it('should test response.updatedAt assignment in updateResponse (line 137)', async () => {
+      // Create response
+      const createRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Original for updatedAt test' });
+
+      const responseId = createRes.body._id;
+      const originalUpdatedAt = createRes.body.updatedAt;
+
+      // Wait briefly to ensure different timestamp
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const mockReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId
+        },
+        body: { content: 'Updated for timestamp test' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.updateResponse(mockReq, mockRes);
+
+      const updatedResponse = mockRes.json.mock.calls[0][0];
+      expect(updatedResponse.content).toBe('Updated for timestamp test');
+      expect(new Date(updatedResponse.updatedAt).getTime()).toBeGreaterThan(new Date(originalUpdatedAt).getTime());
+
+      // Verify in database
+      const finalSurvey = await Survey.findById(testSurvey._id);
+      const savedResponse = finalSurvey.responses.id(responseId);
+      expect(savedResponse.content).toBe('Updated for timestamp test');
+      expect(new Date(savedResponse.updatedAt).getTime()).toBeGreaterThan(new Date(originalUpdatedAt).getTime());
+    });
+
+    it('should test survey.responses.pull operation in deleteResponse (line 170)', async () => {
+      // Create multiple responses
+      const res1 = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'First response for pull test' });
+
+      const user2 = await createTestUser({ username: 'pulltest2', email: 'pulltest2@example.com' });
+      const user2Token = generateTestToken(user2);
+      
+      const res2 = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .send({ content: 'Second response for pull test' });
+
+      const responseId1 = res1.body._id;
+      const responseId2 = res2.body._id;
+
+      // Verify both exist
+      const beforeSurvey = await Survey.findById(testSurvey._id);
+      const beforeCount = beforeSurvey.responses.length;
+      expect(beforeSurvey.responses.id(responseId1)).toBeTruthy();
+      expect(beforeSurvey.responses.id(responseId2)).toBeTruthy();
+
+      // Delete first response
+      const mockReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId1
+        },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.deleteResponse(mockReq, mockRes);
+
+      // Verify pull operation worked
+      const afterSurvey = await Survey.findById(testSurvey._id);
+      expect(afterSurvey.responses.length).toBe(beforeCount - 1);
+      expect(afterSurvey.responses.id(responseId1)).toBeNull();
+      expect(afterSurvey.responses.id(responseId2)).toBeTruthy();
+    });
+
+    it('should test getSurveyResponses populate operation (line 62)', async () => {
+      // Add a response
+      await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response for populate test' });
+
+      const mockReq = {
+        params: { id: testSurvey._id.toString() },
+        user: { id: creator._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.getSurveyResponses(mockReq, mockRes);
+
+      expect(mockRes.json).toHaveBeenCalled();
+      const result = mockRes.json.mock.calls[0][0];
+      expect(result.responses).toBeDefined();
+      expect(Array.isArray(result.responses)).toBe(true);
+      expect(result.responses.length).toBeGreaterThan(0);
+    });
+
+    it('should test getResponse populate operation and response access (lines 81-94)', async () => {
+      // Create response
+      const createRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response for getResponse populate test' });
+
+      const responseId = createRes.body._id;
+
+      const mockReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId
+        },
+        user: { id: creator._id.toString() } // Test creator access
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.getResponse(mockReq, mockRes);
+
+      expect(mockRes.json).toHaveBeenCalled();
+      const result = mockRes.json.mock.calls[0][0];
+      expect(result.response).toBeDefined();
+      expect(result.response.content).toBe('Response for getResponse populate test');
+      expect(result.response._id.toString()).toBe(responseId);
+    });
+
+    it('should test remaining uncovered lines with edge cases', async () => {
+      // Test line 9 - ensuring userId variable assignment is covered
+      const mockReq = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Testing userId assignment line' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.submitResponse(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+    });
+
+    it('should hit all updateResponse success lines including 127, 132, 137', async () => {
+      // Create response first
+      const createRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Content for lines 127-137 test' });
+
+      const responseId = createRes.body._id;
+
+      // Update via controller directly to ensure we hit lines 127, 132, 137
+      const mockReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId
+        },
+        body: { content: 'Updated content to hit lines 127-137' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.updateResponse(mockReq, mockRes);
+
+      // Verify line 132 (response.content assignment) and 137 (response.updatedAt assignment)
+      const updatedResponse = mockRes.json.mock.calls[0][0];
+      expect(updatedResponse.content).toBe('Updated content to hit lines 127-137');
+      expect(updatedResponse.updatedAt).toBeInstanceOf(Date);
+
+      // Verify line 139 (res.json(response))
+      expect(mockRes.json).toHaveBeenCalledWith(updatedResponse);
+    });
+
+    it('should hit all deleteResponse success lines including 159, 164, 169', async () => {
+      // Create response first
+      const createRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Content for lines 159-169 test' });
+
+      const responseId = createRes.body._id;
+
+      // Delete via controller directly to ensure we hit lines 159, 164, 169
+      const mockReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId
+        },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.deleteResponse(mockReq, mockRes);
+
+      // Verify line 169 (survey.responses.pull) worked
+      const finalSurvey = await Survey.findById(testSurvey._id);
+      const deletedResponse = finalSurvey.responses.id(responseId);
+      expect(deletedResponse).toBeNull();
+
+      // Verify line 171 (res.json success message)
+      expect(mockRes.json).toHaveBeenCalledWith({ message: 'Response deleted successfully' });
+    });
+
+    it('should test complete survey save operation success paths', async () => {
+      // Test all the await survey.save() lines (lines 50, 138, 170)
+      const initialResponseCount = (await Survey.findById(testSurvey._id)).responses.length;
+
+      // Test line 50 (submitResponse save)
+      const mockReq1 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Testing survey save line 50' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes1 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.submitResponse(mockReq1, mockRes1);
+
+      // Verify save worked
+      const afterCreateSurvey = await Survey.findById(testSurvey._id);
+      expect(afterCreateSurvey.responses.length).toBe(initialResponseCount + 1);
+
+      const newResponseId = afterCreateSurvey.responses[afterCreateSurvey.responses.length - 1]._id;
+
+      // Test line 138 (updateResponse save)
+      const mockReq2 = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: newResponseId
+        },
+        body: { content: 'Updated to test survey save line 138' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes2 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.updateResponse(mockReq2, mockRes2);
+
+      // Verify update save worked
+      const afterUpdateSurvey = await Survey.findById(testSurvey._id);
+      const updatedResponse = afterUpdateSurvey.responses.id(newResponseId);
+      expect(updatedResponse.content).toBe('Updated to test survey save line 138');
+
+      // Test line 170 (deleteResponse save)
+      const mockReq3 = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: newResponseId
+        },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes3 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.deleteResponse(mockReq3, mockRes3);
+
+      // Verify delete save worked
+      const afterDeleteSurvey = await Survey.findById(testSurvey._id);
+      expect(afterDeleteSurvey.responses.id(newResponseId)).toBeNull();
+      expect(afterDeleteSurvey.responses.length).toBe(initialResponseCount);
+    });
   });
 }); 
