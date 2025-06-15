@@ -507,4 +507,329 @@ describe('Response Controller - Basic Tests', () => {
       expect(response.body.content).toBe('Updated content');
     });
   });
+
+  describe('Complex Scenarios', () => {
+    it('should handle multiple responses from different users', async () => {
+      const user2 = await createTestUser({ username: 'user2', email: 'user2@example.com' });
+      const user3 = await createTestUser({ username: 'user3', email: 'user3@example.com' });
+      const user2Token = generateTestToken(user2);
+      const user3Token = generateTestToken(user3);
+
+      // First user responds
+      const response1 = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'First user response' });
+
+      // Second user responds
+      const response2 = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .send({ content: 'Second user response' });
+
+      // Third user responds
+      const response3 = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${user3Token}`)
+        .send({ content: 'Third user response' });
+
+      expect(response1.status).toBe(201);
+      expect(response2.status).toBe(201);
+      expect(response3.status).toBe(201);
+
+      // Get all responses as creator
+      const allResponses = await request(app)
+        .get(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${creatorToken}`);
+
+      expect(allResponses.status).toBe(200);
+      expect(allResponses.body.responses.length).toBe(3);
+    });
+
+    it('should handle response creation with detailed response object structure', async () => {
+      const response = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Detailed response for testing object structure'
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('_id');
+      expect(response.body).toHaveProperty('user');
+      expect(response.body).toHaveProperty('content');
+      expect(response.body).toHaveProperty('createdAt');
+      expect(response.body).toHaveProperty('updatedAt');
+      expect(response.body.user).toBe(userToken.split('.')[1] ? user._id.toString() : user._id.toString());
+      expect(response.body.content).toBe('Detailed response for testing object structure');
+    });
+
+    it('should handle survey exactly at max responses limit', async () => {
+      // Create survey with max 2 responses
+      const limitedSurvey = await createTestSurvey(creator, { maxResponses: 2 });
+      
+      const user2 = await createTestUser({ username: 'user2', email: 'user2@example.com' });
+      const user3 = await createTestUser({ username: 'user3', email: 'user3@example.com' });
+      const user2Token = generateTestToken(user2);
+      const user3Token = generateTestToken(user3);
+
+      // First response (should succeed)
+      const response1 = await request(app)
+        .post(`/surveys/${limitedSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'First response' });
+
+      // Second response (should succeed)
+      const response2 = await request(app)
+        .post(`/surveys/${limitedSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .send({ content: 'Second response' });
+
+      // Third response (should fail - over limit)
+      const response3 = await request(app)
+        .post(`/surveys/${limitedSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${user3Token}`)
+        .send({ content: 'Third response should fail' });
+
+      expect(response1.status).toBe(201);
+      expect(response2.status).toBe(201);
+      expect(response3.status).toBe(400);
+      expect(response3.body.error.message).toBe('Survey is not accepting new responses at this time.');
+    });
+
+    it('should verify response ownership in getResponse for both creator and owner', async () => {
+      // Submit a response
+      const submitRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response for ownership test' });
+
+      const responseId = submitRes.body._id;
+
+      // Creator should be able to access
+      const creatorAccess = await request(app)
+        .get(`/surveys/${testSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${creatorToken}`);
+
+      // Owner should be able to access
+      const ownerAccess = await request(app)
+        .get(`/surveys/${testSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(creatorAccess.status).toBe(200);
+      expect(ownerAccess.status).toBe(200);
+      expect(creatorAccess.body.response.content).toBe('Response for ownership test');
+      expect(ownerAccess.body.response.content).toBe('Response for ownership test');
+    });
+
+
+
+
+  });
+
+  describe('Success Path Coverage', () => {
+    it('should successfully create response and verify all object properties', async () => {
+      // Test the complete success path of submitResponse (lines 42-53)
+      const response = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Complete success path test response'
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('_id');
+      expect(response.body).toHaveProperty('user', user._id.toString());
+      expect(response.body).toHaveProperty('content', 'Complete success path test response');
+      expect(response.body).toHaveProperty('createdAt');
+      expect(response.body).toHaveProperty('updatedAt');
+      expect(new Date(response.body.createdAt)).toBeInstanceOf(Date);
+      expect(new Date(response.body.updatedAt)).toBeInstanceOf(Date);
+    });
+
+
+
+
+
+    it('should cover survey.save() and response creation path', async () => {
+      // Test the complete save path with response creation
+      const beforeCount = (await Survey.findById(testSurvey._id)).responses.length;
+      
+      const response = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Testing save path and response creation'
+        });
+
+      expect(response.status).toBe(201);
+      
+      const afterSurvey = await Survey.findById(testSurvey._id);
+      expect(afterSurvey.responses.length).toBe(beforeCount + 1);
+      
+      const savedResponse = afterSurvey.responses[afterSurvey.responses.length - 1];
+      expect(savedResponse.content).toBe('Testing save path and response creation');
+      expect(savedResponse.user.toString()).toBe(user._id.toString());
+    });
+
+
+
+
+
+
+
+    it('should verify getSurveyResponses with populated user data', async () => {
+      // Submit multiple responses
+      const user2 = await createTestUser({ username: 'popuser1', email: 'popuser1@example.com' });
+      const user2Token = generateTestToken(user2);
+
+      await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response 1' });
+
+      await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .send({ content: 'Response 2' });
+
+      // Test complete getSurveyResponses success path
+      const response = await request(app)
+        .get(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${creatorToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.responses).toHaveLength(2);
+      expect(response.body.responses[0]).toHaveProperty('content');
+      expect(response.body.responses[1]).toHaveProperty('content');
+    });
+
+    it('should verify getResponse with populated user data success path', async () => {
+      // Submit response
+      const submitRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response for getResponse test' });
+
+      const responseId = submitRes.body._id;
+
+      // Test complete getResponse success path
+      const response = await request(app)
+        .get(`/surveys/${testSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${creatorToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.response).toHaveProperty('content', 'Response for getResponse test');
+      expect(response.body.response).toHaveProperty('_id', responseId);
+    });
+  });
+
+  describe('Maximum Success Path Coverage', () => {
+    it('should hit all success lines in submitResponse function', async () => {
+      // Create fresh survey for success path
+      const freshSurvey = await createTestSurvey(creator, {});
+
+      // This should hit all lines 5-53 in submitResponse
+      const response = await request(app)
+        .post(`/surveys/${freshSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Success path comprehensive test'
+        });
+
+      // Verify full success path
+      expect(response.status).toBe(201);
+      expect(response.body._id).toBeDefined();
+      expect(response.body.user).toBe(user._id.toString());
+      expect(response.body.content).toBe('Success path comprehensive test');
+      expect(response.body.createdAt).toBeDefined();
+      expect(response.body.updatedAt).toBeDefined();
+
+      // Verify database state
+      const savedSurvey = await Survey.findById(freshSurvey._id);
+      expect(savedSurvey.responses.length).toBe(1);
+      expect(savedSurvey.responses[0].content).toBe('Success path comprehensive test');
+    });
+
+    it('should hit all success lines in updateResponse function', async () => {
+      // Submit initial response
+      const freshSurvey = await createTestSurvey(creator, {});
+      
+      const submitRes = await request(app)
+        .post(`/surveys/${freshSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Initial for update success test' });
+
+      const responseId = submitRes.body._id;
+
+      // This should hit all lines 115-145 in updateResponse
+      const updateRes = await request(app)
+        .put(`/surveys/${freshSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Updated via success path test' });
+
+      // Verify update success
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.content).toBe('Updated via success path test');
+      expect(updateRes.body._id).toBe(responseId);
+      expect(updateRes.body.updatedAt).toBeDefined();
+
+      // Verify database persistence
+      const savedSurvey = await Survey.findById(freshSurvey._id);
+      const savedResponse = savedSurvey.responses.id(responseId);
+      expect(savedResponse.content).toBe('Updated via success path test');
+    });
+
+    it('should hit all success lines in deleteResponse function', async () => {
+      // Submit response to delete
+      const freshSurvey = await createTestSurvey(creator, {});
+      
+      const submitRes = await request(app)
+        .post(`/surveys/${freshSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response for delete success test' });
+
+      const responseId = submitRes.body._id;
+
+      // This should hit all lines 153-174 in deleteResponse
+      const deleteRes = await request(app)
+        .delete(`/surveys/${freshSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      // Verify deletion success
+      expect(deleteRes.status).toBe(200);
+      expect(deleteRes.body.message).toBe('Response deleted successfully');
+
+      // Verify response was removed from database
+      const savedSurvey = await Survey.findById(freshSurvey._id);
+      const deletedResponse = savedSurvey.responses.id(responseId);
+      expect(deletedResponse).toBeNull();
+      expect(savedSurvey.responses.length).toBe(0);
+    });
+
+    it('should test all validation checks and success paths together', async () => {
+      // Test content validation first (hit validation logic)
+      const invalidRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: null });
+
+      expect(invalidRes.status).toBe(400);
+
+      // Then test full success path with valid content
+      const validRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Valid content after validation test' });
+
+      expect(validRes.status).toBe(201);
+      expect(validRes.body.content).toBe('Valid content after validation test');
+    });
+
+
+
+
+
+
+  });
 }); 
