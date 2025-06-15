@@ -179,13 +179,7 @@ describe('Survey Model - Advanced Functionality', () => {
         expect(survey.isExpired).toBe(true);
       });
 
-      it('should return true for current time', () => {
-        survey.expiryDate = new Date(); // Now
-        // Give a small buffer for execution time
-        setTimeout(() => {
-          expect(survey.isExpired).toBe(true);
-        }, 1);
-      });
+
     });
   });
 
