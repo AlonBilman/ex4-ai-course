@@ -1287,4 +1287,548 @@ describe('Response Controller - Basic Tests', () => {
       expect(afterDeleteSurvey.responses.length).toBe(initialResponseCount);
     });
   });
+
+  describe('Branch Coverage Testing', () => {
+    it('should test both parts of content validation condition (!content || typeof content !== string)', async () => {
+      // Test !content branch (falsy content)
+      const mockReq1 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: '' }, // Empty string is falsy
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes1 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.submitResponse(mockReq1, mockRes1);
+
+      expect(mockRes1.status).toHaveBeenCalledWith(400);
+      expect(mockRes1.json).toHaveBeenCalledWith({ error: { message: 'Content is required' } });
+
+      // Test typeof content !== 'string' branch
+      const mockReq2 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 123 }, // Number instead of string
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes2 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq2, mockRes2);
+
+      expect(mockRes2.status).toHaveBeenCalledWith(400);
+      expect(mockRes2.json).toHaveBeenCalledWith({ error: { message: 'Content is required' } });
+
+      // Test undefined content (falsy)
+      const mockReq3 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: undefined },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes3 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq3, mockRes3);
+
+      expect(mockRes3.status).toHaveBeenCalledWith(400);
+    });
+
+    it('should test maxResponses branches (survey.maxResponses && survey.responses.length >= survey.maxResponses)', async () => {
+      // Test null maxResponses with controller directly
+      const mockReq = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Testing maxResponses branch logic' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      // Temporarily modify survey to test null maxResponses logic
+      const originalMaxResponses = testSurvey.maxResponses;
+      testSurvey.maxResponses = null;
+      await testSurvey.save({ validateBeforeSave: false });
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.submitResponse(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+
+      // Restore original maxResponses
+      testSurvey.maxResponses = originalMaxResponses;
+      await testSurvey.save({ validateBeforeSave: false });
+
+      // Test survey with maxResponses but not reached (first part true, second part false)
+      const surveyWithLimit = await createTestSurvey(creator, {
+        maxResponses: 5
+      });
+
+      const response2 = await request(app)
+        .post(`/surveys/${surveyWithLimit._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response to survey under limit' });
+
+      expect(response2.status).toBe(201);
+    });
+
+    it('should test getResponse access control branches (creator !== userId && owner !== userId)', async () => {
+      // Create response by user
+      const submitRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response for access control test' });
+
+      const responseId = submitRes.body._id;
+
+      // Test when user is creator (first part false) - already covered
+      const creatorAccess = await request(app)
+        .get(`/surveys/${testSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${creatorToken}`);
+
+      expect(creatorAccess.status).toBe(200);
+
+      // Test when user is response owner (second part false) - already covered
+      const ownerAccess = await request(app)
+        .get(`/surveys/${testSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(ownerAccess.status).toBe(200);
+
+      // Test when user is neither creator nor owner (both parts true)
+      const thirdUser = await createTestUser({ username: 'thirduser', email: 'third@example.com' });
+      const thirdUserToken = generateTestToken(thirdUser);
+
+      const unauthorizedAccess = await request(app)
+        .get(`/surveys/${testSurvey._id}/responses/${responseId}`)
+        .set('Authorization', `Bearer ${thirdUserToken}`);
+
+      expect(unauthorizedAccess.status).toBe(403);
+      expect(unauthorizedAccess.body.error.message).toBe('Access denied');
+    });
+
+    it('should test updateResponse expiry branches (survey.expiryDate && survey.expiryDate < new Date())', async () => {
+      // Create response first
+      const submitRes = await request(app)
+        .post(`/surveys/${testSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response for expiry branch test' });
+
+      const responseId = submitRes.body._id;
+
+      // Test survey with null expiryDate using controller directly
+      const mockReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId
+        },
+        body: { content: 'Updated content for null expiry test' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      // Temporarily modify survey to test null expiryDate logic
+      const originalExpiry = testSurvey.expiryDate;
+      testSurvey.expiryDate = null;
+      await testSurvey.save({ validateBeforeSave: false });
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.updateResponse(mockReq, mockRes);
+
+      expect(mockRes.json).toHaveBeenCalled();
+
+      // Restore original expiry
+      testSurvey.expiryDate = originalExpiry;
+      await testSurvey.save({ validateBeforeSave: false });
+
+      // Test survey with future expiry (first part true, second part false)
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 30);
+      
+      const surveyFutureExpiry = await createTestSurvey(creator, {
+        expiryDate: futureDate
+      });
+
+      const createRes3 = await request(app)
+        .post(`/surveys/${surveyFutureExpiry._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Response for future expiry update test' });
+
+      const responseId3 = createRes3.body._id;
+
+      const updateFutureExpiry = await request(app)
+        .put(`/surveys/${surveyFutureExpiry._id}/responses/${responseId3}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Updated response future expiry' });
+
+      expect(updateFutureExpiry.status).toBe(200);
+    });
+
+    it('should test deleteResponse access control branches (creator !== userId && owner !== userId)', async () => {
+      // Use controller directly to avoid rate limiting
+      const responseController = require('../controllers/response.controller');
+
+      // Create response using controller directly
+      const createReq = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Response for delete access control test' },
+        user: { id: user._id.toString() }
+      };
+
+      const createRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(createReq, createRes);
+      const responseId = createRes.json.mock.calls[0][0]._id;
+
+      // Test deletion by creator (first part false)
+      const creatorDeleteReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId
+        },
+        user: { id: creator._id.toString() }
+      };
+
+      const creatorDeleteRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.deleteResponse(creatorDeleteReq, creatorDeleteRes);
+      expect(creatorDeleteRes.json).toHaveBeenCalledWith({ message: 'Response deleted successfully' });
+
+      // Create another response for owner deletion test
+      const createReq2 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Response for owner delete test' },
+        user: { id: user._id.toString() }
+      };
+
+      const createRes2 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(createReq2, createRes2);
+      const responseId2 = createRes2.json.mock.calls[0][0]._id;
+
+      // Test deletion by owner (second part false)
+      const ownerDeleteReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId2
+        },
+        user: { id: user._id.toString() }
+      };
+
+      const ownerDeleteRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.deleteResponse(ownerDeleteReq, ownerDeleteRes);
+      expect(ownerDeleteRes.json).toHaveBeenCalledWith({ message: 'Response deleted successfully' });
+
+      // Test unauthorized deletion (both parts true)
+      const createReq3 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Response for unauthorized delete test' },
+        user: { id: user._id.toString() }
+      };
+
+      const createRes3 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(createReq3, createRes3);
+      const responseId3 = createRes3.json.mock.calls[0][0]._id;
+
+      const thirdUser = await createTestUser({ username: 'thirduser2', email: 'third2@example.com' });
+
+      const unauthorizedDeleteReq = {
+        params: { 
+          id: testSurvey._id.toString(),
+          responseId: responseId3
+        },
+        user: { id: thirdUser._id.toString() }
+      };
+
+      const unauthorizedDeleteRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.deleteResponse(unauthorizedDeleteReq, unauthorizedDeleteRes);
+      expect(unauthorizedDeleteRes.status).toHaveBeenCalledWith(403);
+      expect(unauthorizedDeleteRes.json).toHaveBeenCalledWith({ error: { message: 'Access denied' } });
+    });
+
+    it('should test edge cases for branch coverage completion', async () => {
+      // Test null content explicitly (different from undefined)
+      const mockReq = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: null },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      const responseController = require('../controllers/response.controller');
+      await responseController.submitResponse(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+
+      // Test false content (boolean falsy)
+      const mockReq2 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: false },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes2 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq2, mockRes2);
+
+      expect(mockRes2.status).toHaveBeenCalledWith(400);
+
+      // Test 0 content (number falsy)
+      const mockReq3 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 0 },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes3 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq3, mockRes3);
+
+      expect(mockRes3.status).toHaveBeenCalledWith(400);
+    });
+
+    it('should test uncovered branches in conditional statements', async () => {
+      // Test line 27 - case where expiryDate exists but is in the future
+      const futureSurvey = await createTestSurvey(creator, {
+        expiryDate: new Date(Date.now() + 86400000) // One day in the future
+      });
+
+      const response1 = await request(app)
+        .post(`/surveys/${futureSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'Test with future expiry' });
+      
+      expect(response1.status).toBe(201); // Should succeed because date is in future
+
+      // Test line 32 - case where maxResponses exists but there's still room  
+      const limitedSurvey = await createTestSurvey(creator, {
+        maxResponses: 3
+      });
+
+      // First response - should succeed
+      const response2 = await request(app)
+        .post(`/surveys/${limitedSurvey._id}/responses`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ content: 'First response under limit' });
+      
+      expect(response2.status).toBe(201);
+    });
+
+    it('should test error handling paths for improved coverage', async () => {
+      // Test different validation error cases using controller directly to avoid rate limiting
+      const responseController = require('../controllers/response.controller');
+      
+      // Test with content that is a number (not string)
+      const mockReq1 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 123 },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes1 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq1, mockRes1);
+      expect(mockRes1.status).toHaveBeenCalledWith(400);
+
+      // Test with content that is an object (not string)
+      const mockReq2 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: { text: 'object content' } },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes2 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq2, mockRes2);
+      expect(mockRes2.status).toHaveBeenCalledWith(400);
+
+      // Test with content that is an array (not string)
+      const mockReq3 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: ['array', 'content'] },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes3 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq3, mockRes3);
+      expect(mockRes3.status).toHaveBeenCalledWith(400);
+    });
+
+    it('should test survey active/inactive branches', async () => {
+      // Create inactive survey and test with controller directly
+      const inactiveSurvey = await createTestSurvey(creator, {
+        isActive: false
+      });
+
+      const responseController = require('../controllers/response.controller');
+      const mockReq = {
+        params: { id: inactiveSurvey._id.toString() },
+        body: { content: 'Test with inactive survey' },
+        user: { id: user._id.toString() }
+      };
+
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq, mockRes);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({ error: { message: 'Survey is not active' } });
+    });
+
+    it('should test additional conditional branches for coverage', async () => {
+      // Test case where survey exists, is active, not expired, under limit, but user already responded
+      // Use controller directly to avoid rate limiting
+      const responseController = require('../controllers/response.controller');
+      const testUser2 = await createTestUser({ username: 'testuser2', email: 'testuser2@example.com' });
+
+      // Submit first response using controller
+      const mockReq1 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'First response by user2' },
+        user: { id: testUser2._id.toString() }
+      };
+
+      const mockRes1 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq1, mockRes1);
+      expect(mockRes1.status).toHaveBeenCalledWith(201);
+
+      // Try to submit second response by same user - should fail
+      const mockReq2 = {
+        params: { id: testSurvey._id.toString() },
+        body: { content: 'Second response by same user' },
+        user: { id: testUser2._id.toString() }
+      };
+
+      const mockRes2 = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(mockReq2, mockRes2);
+      expect(mockRes2.status).toHaveBeenCalledWith(400);
+      expect(mockRes2.json).toHaveBeenCalledWith({ 
+        error: { 
+          code: 'RESPONSE_ALREADY_EXISTS',
+          message: 'You have already submitted a response to this survey' 
+        } 
+      });
+    });
+
+    it('should test specific uncovered lines for maximum coverage', async () => {
+      // Test updateResponse and deleteResponse with controller directly
+      const responseController = require('../controllers/response.controller');
+      const updateTestSurvey = await createTestSurvey(creator);
+      
+      // Submit a response first using controller
+      const submitReq = {
+        params: { id: updateTestSurvey._id.toString() },
+        body: { content: 'Original content for update test' },
+        user: { id: user._id.toString() }
+      };
+
+      const submitRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.submitResponse(submitReq, submitRes);
+      const responseId = submitRes.json.mock.calls[0][0]._id;
+
+      // Test successful update (should hit line 132, 137)
+      const updateReq = {
+        params: { 
+          id: updateTestSurvey._id.toString(),
+          responseId: responseId
+        },
+        body: { content: 'Updated content' },
+        user: { id: user._id.toString() }
+      };
+
+      const updateRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.updateResponse(updateReq, updateRes);
+      expect(updateRes.json).toHaveBeenCalled();
+
+      // Test deleteResponse success path (should hit line 169, 171)
+      const deleteReq = {
+        params: { 
+          id: updateTestSurvey._id.toString(),
+          responseId: responseId
+        },
+        user: { id: user._id.toString() }
+      };
+
+      const deleteRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis()
+      };
+
+      await responseController.deleteResponse(deleteReq, deleteRes);
+      expect(deleteRes.json).toHaveBeenCalledWith({ message: 'Response deleted successfully' });
+    });
+  });
 }); 
