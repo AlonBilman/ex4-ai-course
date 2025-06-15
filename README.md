@@ -42,7 +42,7 @@ A RESTful API server that enables users to create, participate in, and manage su
 
 ```bash
 git clone <repository-url>
-cd survey-server
+cd ex4-ai-course
 ```
 
 2. Install dependencies:
@@ -54,10 +54,11 @@ npm install
 3. Create environment file:
 
 ```bash
-cp .env.example .env
+# Create a .env file in the project root
+touch .env
 ```
 
-4. Update the `.env` file with your configuration (see Required Environment Variables section below)
+4. Add the required environment variables to your `.env` file (see Required Environment Variables section below)
 
 ## Required Environment Variables
 
@@ -97,17 +98,59 @@ USE_MOCK_LLM=false
 
 ## Running the Application
 
-Development mode:
+### Quick Start
 
+1. **Start MongoDB** (choose one option):
+   
+   **Option A: Local MongoDB**
+   ```bash
+   # Start MongoDB service (varies by OS)
+   # Windows: Start MongoDB service from Services
+   # macOS: brew services start mongodb/brew/mongodb-community
+   # Linux: sudo systemctl start mongod
+   mongod
+   ```
+   
+   **Option B: MongoDB Atlas (Cloud)**
+   - Create a free cluster at [MongoDB Atlas](https://cloud.mongodb.com/)
+   - Get your connection string and use it as `MONGODB_URI` in `.env`
+
+2. **Create and configure `.env` file** with required variables (see section above)
+
+3. **Start the application**:
+   
+   **Development mode** (with auto-restart):
+   ```bash
+   npm run dev
+   ```
+   
+   **Production mode**:
+   ```bash
+   npm start
+   ```
+
+4. **Access the application**:
+   - **API Server**: http://localhost:3000
+   - **API Documentation**: http://localhost:3000/api-docs
+   - **Frontend**: Open `frontend/index.html` in your browser
+
+### Running Options
+
+**Development Mode:**
 ```bash
 npm run dev
 ```
+- Uses nodemon for automatic restart on file changes
+- Detailed logging enabled
+- Perfect for development and testing
 
-Production mode:
-
+**Production Mode:**
 ```bash
 npm start
 ```
+- Starts the server with Node.js directly
+- Optimized for production use
+- Requires `NODE_ENV=production` in `.env`
 
 ## Testing
 
@@ -118,6 +161,54 @@ npm test
 ```
 
 Tests automatically use mock LLM responses and in-memory MongoDB for fast, reliable testing.
+
+## Troubleshooting
+
+### Common Setup Issues
+
+1. **MongoDB Connection Failed**:
+   ```
+   Error: connect ECONNREFUSED 127.0.0.1:27017
+   ```
+   **Solutions:**
+   - Ensure MongoDB is running: `mongod` or start the MongoDB service
+   - Check if the `MONGODB_URI` in `.env` is correct
+   - For MongoDB Atlas: Verify connection string and IP whitelist
+
+2. **Port Already in Use**:
+   ```
+   Error: listen EADDRINUSE: address already in use :::3000
+   ```
+   **Solutions:**
+   - Change `PORT=3001` in your `.env` file
+   - Kill existing process: `lsof -ti:3000 | xargs kill` (macOS/Linux) or use Task Manager (Windows)
+
+3. **Missing Environment Variables**:
+   ```
+   Error: JWT_SECRET is required
+   ```
+   **Solution:** Ensure all required variables are in your `.env` file
+
+4. **LLM API Errors** (when `USE_MOCK_LLM=false`):
+   ```
+   Error: OpenRouter API request failed
+   ```
+   **Solutions:**
+   - Set `USE_MOCK_LLM=true` in `.env` for development
+   - Verify `OPENROUTER_API_KEY` is valid for production
+
+5. **Frontend CORS Issues**:
+   - Ensure the API server is running
+   - Check that frontend files reference the correct server URL
+   - Open browser developer tools to see specific CORS errors
+
+### Verification Steps
+
+**Check if everything is working:**
+1. Server starts without errors
+2. Visit http://localhost:3000/api-docs to see API documentation
+3. Open `frontend/index.html` in browser
+4. MongoDB connection shows "Connected to MongoDB" in logs
 
 ## How to Verify Mock/Test Mode
 
@@ -176,17 +267,41 @@ For production with real LLM API calls:
 
 ```
 project-root/
-├── src/
-│   ├── controllers/    # Request handlers
-│   ├── models/        # Database models
-│   ├── routes/        # API routes
-│   ├── services/      # Business logic
-│   ├── middleware/    # Custom middleware
-│   ├── utils/         # Helper functions
-│   └── config/        # Configuration
-├── tests/             # Test files
-├── prompts/           # LLM prompts
-└── docs/             # Documentation
+├── src/                          # Main application code
+│   ├── controllers/              # Request handlers
+│   ├── models/                   # Database models (MongoDB/Mongoose)
+│   ├── routes/                   # API route definitions
+│   ├── services/                 # Business logic layer
+│   ├── middleware/               # Custom middleware functions
+│   ├── utils/                    # Helper functions and utilities
+│   ├── config/                   # Configuration files
+│   ├── prompts/                  # LLM prompt templates
+│   ├── tests/                    # Test setup files
+│   ├── __tests__/                # Unit tests
+│   ├── __mocks__/                # Mock implementations
+│   └── app.js                    # Main application entry point
+├── frontend/                     # Frontend HTML files
+│   ├── assets/                   # Shared frontend assets
+│   ├── index.html                # Landing page
+│   ├── login.html                # Login page
+│   ├── register.html             # Registration page
+│   ├── dashboard.html            # User dashboard
+│   ├── create-survey.html        # Survey creation page
+│   └── survey.html               # Survey participation page
+├── assets/                       # Global static assets
+│   ├── css/                      # Stylesheets
+│   └── js/                       # JavaScript files
+├── prompts/                      # Additional LLM prompts
+├── logs/                         # Application log files
+├── coverage/                     # Test coverage reports
+├── package.json                  # Node.js dependencies and scripts
+├── jest.config.js                # Jest testing configuration
+├── jest.setup.js                 # Jest setup file
+├── server.js                     # Alternative server entry point (references src/app.js)
+├── design.md                     # Project design documentation
+├── reflection.md                 # Project reflection notes
+├── Survey-Server-API.postman_collection.json  # Postman API collection
+└── Survey-Server-Environment.postman_environment.json  # Postman environment
 ```
 
 ## Error Handling
