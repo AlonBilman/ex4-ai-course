@@ -4,10 +4,10 @@ A RESTful API server that enables users to create, participate in, and manage su
 
 ## Submitted by
 
-- **Adi Karif:** 208295576
-- **Yakir Twil:** 313528168
-- **Alon Bilman:** 211684535
-- **Ahmad Danaf:** 211787833
+- **Adi Karif** 
+- **Yakir Twil** 
+- **Alon Bilman** 
+- **Ahmad Danaf** 
 
 ## Features
 
